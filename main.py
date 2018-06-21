@@ -29,8 +29,6 @@ def download_wav(url, lang, rec_num):
 
 lang = input("Enter language: ").title()
 
-print(lang)
-
 find = urllib.request.urlopen("http://lacito.vjf.cnrs.fr/pangloss/corpus/corpora_list_en.php")
 
 soup_find = BeautifulSoup(find, 'html.parser')
