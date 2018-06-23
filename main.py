@@ -2,6 +2,7 @@ import urllib
 import urllib.request
 import requests
 import sys
+import argparse
 from bs4 import BeautifulSoup
 
 #Gets a list of URLs and returns the .wav URL.
@@ -60,8 +61,8 @@ def download_all_rec(lang, site):
 
     print("All downloads are complete.")
 
-def download_lang():
-    lang = input("Enter language: ").capwords()
+def download_lang(lang):
+    #lang = input("Enter language: ").capwords()
 
     find = urllib.request.urlopen("http://lacito.vjf.cnrs.fr/pangloss/corpus/index_en.html")
 
@@ -71,8 +72,8 @@ def download_lang():
 
     #Finds the given language's website.
     for name in soup_find.find_all('a'):
-        if name.text.encode('utf-8') == lang.encode('utf-8'):
-            site = urllib.request.urlopen('http://lacito.vjf.cnrs.fr/pangloss/corpus/' + name.get('href'))
+        if name.text.encode('utf-8') == lang:
+            site = requests.get('http://lacito.vjf.cnrs.fr/pangloss/corpus/' + name.get('href')).content
             found = True
             break
 
@@ -80,7 +81,7 @@ def download_lang():
         print("Language not found.")
         sys.exit(1)
 
-    download_all_rec(lang.encode('utf-8'), site)
+    download_all_rec(lang, site)
 
 
 def download_all_lang():
@@ -101,12 +102,23 @@ def download_all_lang():
 
 #START OF SCRIPT
 
+'''
 print("Download recordings for a specific language or all languages?")
 print("s - specific")
 print("a - all")
-
+'''
 choice = ''
 
+parser = argparse.ArgumentParser()
+parser.add_argument("language", type=str, help="language to download (all or specific)")
+args = parser.parse_args()
+
+if args.language.lower() == "all":
+    download_all_lang()
+else:
+    download_lang(args.language.capitalize().encode('utf-8'))
+
+'''
 while choice != 's' and choice != 'a':
     choice = input("Choice: ")
 
@@ -114,43 +126,4 @@ if choice == 's':
     download_lang()
 elif choice == 'a':
     download_all_lang()
-
-    
-'''
-lang = input("Enter language: ").title()
-
-find = urllib.request.urlopen("http://lacito.vjf.cnrs.fr/pangloss/corpus/corpora_list_en.php")
-
-soup_find = BeautifulSoup(find, 'html.parser')
-
-found = False
-
-#Finds the given language's website.
-for name in soup_find.find_all('b'):
-    if name.encode('utf-8').find(lang.encode('utf-8')) != -1:
-        site = urllib.request.urlopen('http://lacito.vjf.cnrs.fr/pangloss/corpus/' + name.a.get('href'))
-        found = True
-        break
-
-if not found:
-    print("Language not found.")
-    sys.exit(1)
-'''
-
-
-'''
-soup = BeautifulSoup(site, 'html.parser')
-
-urls = []
-
-#Find the URLs of all recordings.
-for link in soup.find_all('a'):
-    if link.get('href') is not None and link.get('href').encode('utf-8').find('show_text'.encode('utf-8')) == 0:
-        url = link.get('href')
-        urls.append(url)
-
-for u in urls:
-    download_rec(u, lang, urls.index(u))
-
-print("All downloads are complete.")
 '''
