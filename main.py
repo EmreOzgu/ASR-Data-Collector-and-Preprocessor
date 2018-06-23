@@ -97,6 +97,8 @@ def download_lang(lang):
         if lang_name.find(" (") != -1:
             lang_name = lang_name[:lang_name.find(" (")]
 
+        lang_name = "".join(lang_name.split())
+
         if lang_name == lang:
             site = requests.get('http://lacito.vjf.cnrs.fr/pangloss/corpus/' + name.get('href')).content
             found = True
@@ -115,12 +117,18 @@ def download_all_lang():
 
     soup_langs = BeautifulSoup(lang_list, 'html.parser')
 
+    for br in soup_langs.find_all('br'):
+        br.extract()
+
     #Find all languages and download recordings.
     for link in soup_langs.find_all('a'):
         if link.get('href') is not None and link.get('href').find('list_rsc') == 0:
             lang = link.text
-            site = requests.get("http://lacito.vjf.cnrs.fr/pangloss/corpus/" + link.get('href')).content
-            download_all_rec(lang, site)
+            lang = "".join(lang.split())
+
+            if link.text.startswith("Na-"):
+                site = requests.get("http://lacito.vjf.cnrs.fr/pangloss/corpus/" + link.get('href')).content
+                download_all_rec(lang, site)
 
 
 #START OF SCRIPT
@@ -135,6 +143,9 @@ if lang.lower() == "all":
     download_all_lang()
 else:
     lang = " ".join(args.language)
+
+    #Get rid of whitespace to avoid any errors.
+    lang = "".join(lang.split())
     download_lang(lang)
 
 print("All downloads are complete.")
