@@ -18,6 +18,12 @@ def find_xml(soup):
             return link.get('href')
     return None
 
+def find_mp4(soup):
+    for link in soup.find_all('a'):
+        if link.get('href').encode('utf-8')[-4:] == ".mp4".encode('utf-8'):
+            return link.get('href')
+    return None
+
 #Download the recording files from pangloss, given the url
 def download_rec(url, lang, rec_num):
     url = "http://lacito.vjf.cnrs.fr/pangloss/corpus/" + url
@@ -44,6 +50,10 @@ def download_rec(url, lang, rec_num):
 
     if xml_url is not None:
         urllib.request.urlretrieve(xml_url, lang.decode('utf-8') + "Recording" + str(rec_num + 1) + ".xml")
+    else:
+        mp4_url = find_mp4(soup)
+        if mp4_url is not None:
+            urllib.request.urlretrieve(mp4_url, lang.decode('utf-8') + "Recording" + str(rec_num + 1) + ".mp4")
 
     if wav_url is not None:
         urllib.request.urlretrieve(wav_url, lang.decode('utf-8') + "Recording" + str(rec_num + 1) + ".wav")
