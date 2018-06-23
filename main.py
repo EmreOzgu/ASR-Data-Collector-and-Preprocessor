@@ -27,7 +27,8 @@ def find_mp4(soup):
 #Download the recording files from pangloss, given the url
 def download_rec(url, lang, rec_num):
     url = "http://lacito.vjf.cnrs.fr/pangloss/corpus/" + url
-    site = urllib.request.urlopen(url)
+    #site = urllib.request.urlopen(url)
+    site = requests.get(url).content
     soup = BeautifulSoup(site, 'html.parser')
 
     urls = []
@@ -38,9 +39,6 @@ def download_rec(url, lang, rec_num):
     wav_url = find_wav(urls)
 
     xml_url = find_xml(soup)
-
-    #print("Downloading " + lang.decode('utf-8') + "Recording" + str(rec_num + 1) + "...")
-    #sys.stdout.flush()
 
     rec = "Recording" + str(rec_num + 1)
 
@@ -82,9 +80,10 @@ def download_all_rec(lang, site):
     print("All downloads are complete.")
 
 def download_lang(lang):
-    #lang = input("Enter language: ").capwords()
 
-    find = urllib.request.urlopen("http://lacito.vjf.cnrs.fr/pangloss/corpus/index_en.html")
+    #find = urllib.request.urlopen("http://lacito.vjf.cnrs.fr/pangloss/corpus/index_en.html")
+
+    find = requests.get("http://lacito.vjf.cnrs.fr/pangloss/corpus/index_en.html").content
 
     soup_find = BeautifulSoup(find, 'html.parser')
 
@@ -111,7 +110,9 @@ def download_lang(lang):
 
 
 def download_all_lang():
-    lang_list = urllib.request.urlopen("http://lacito.vjf.cnrs.fr/pangloss/corpus/index_en.html")
+    #lang_list = urllib.request.urlopen("http://lacito.vjf.cnrs.fr/pangloss/corpus/index_en.html")
+
+    lang_list = requests.get("http://lacito.vjf.cnrs.fr/pangloss/corpus/index_en.html").content
 
     soup_langs = BeautifulSoup(lang_list, 'html.parser')
 
@@ -119,10 +120,8 @@ def download_all_lang():
     for link in soup_langs.find_all('a'):
         if link.get('href') is not None and link.get('href').encode('utf-8').find('list_rsc'.encode('utf-8')) == 0:
             lang = link.text.encode('utf-8')
-            #sys.stdout.buffer.write(lang)
             if lang[-1:] == "n".encode('utf-8'):
                 site = requests.get("http://lacito.vjf.cnrs.fr/pangloss/corpus/" + link.get('href')).content
-                #site = urllib.request.urlopen("http://lacito.vjf.cnrs.fr/pangloss/corpus/" + link.get('href'))
                 download_all_rec(lang, site)
     
 
