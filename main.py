@@ -79,10 +79,16 @@ def download_lang(lang):
     soup_find = BeautifulSoup(find, 'html.parser')
 
     found = False
-
+    
     #Finds the given language's website.
     for name in soup_find.find_all('a'):
-        if name.text.encode('utf-8') == lang:
+        lang_name = name.text
+
+        #Gets rid of parantheses for language names that include a description.
+        if lang_name.find(" (") != -1:
+            lang_name = lang_name[:lang_name.find(" (")]
+            
+        if lang_name.encode('utf-8') == lang:
             site = requests.get('http://lacito.vjf.cnrs.fr/pangloss/corpus/' + name.get('href')).content
             found = True
             break
@@ -122,4 +128,4 @@ if lang.lower() == "all":
     download_all_lang()
 else:
     lang = " ".join(args.language)
-    download_lang(lang.capitalize().encode('utf-8'))
+    download_lang(lang.encode('utf-8'))
