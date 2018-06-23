@@ -33,7 +33,13 @@ def download_rec(url, lang, rec_num):
 
     xml_url = find_xml(soup)
 
-    print("Downloading " + lang.decode('utf-8') + "Recording" + str(rec_num + 1) + "...")
+    #print("Downloading " + lang.decode('utf-8') + "Recording" + str(rec_num + 1) + "...")
+    #sys.stdout.flush()
+
+    rec = "Recording" + str(rec_num + 1)
+
+    sys.stdout.buffer.write("Downloading ".encode('utf-8') + lang + rec.encode('utf-8') + "...".encode('utf-8'))
+    print()
     sys.stdout.flush()
 
     if xml_url is not None:
@@ -42,7 +48,11 @@ def download_rec(url, lang, rec_num):
     if wav_url is not None:
         urllib.request.urlretrieve(wav_url, lang.decode('utf-8') + "Recording" + str(rec_num + 1) + ".wav")
 
-    print(lang.decode('utf-8') + "Recording" + str(rec_num + 1) + " download complete.") 
+    #print(lang.decode('utf-8') + "Recording" + str(rec_num + 1) + " download complete.") 
+    sys.stdout.buffer.write(lang + rec.encode('utf-8') + " download complete.".encode('utf-8'))
+    print()
+    sys.stdout.flush()
+
 
 #Download all recording files for a given language's site.
 def download_all_rec(lang, site):
@@ -102,28 +112,14 @@ def download_all_lang():
 
 #START OF SCRIPT
 
-'''
-print("Download recordings for a specific language or all languages?")
-print("s - specific")
-print("a - all")
-'''
-choice = ''
-
 parser = argparse.ArgumentParser()
-parser.add_argument("language", type=str, help="language to download (all or specific)")
+parser.add_argument("language", type=str, help="language to download (all or specific)", nargs='*')
 args = parser.parse_args()
 
-if args.language.lower() == "all":
+lang = " ".join(args.language)
+
+if lang.lower() == "all":
     download_all_lang()
 else:
-    download_lang(args.language.capitalize().encode('utf-8'))
-
-'''
-while choice != 's' and choice != 'a':
-    choice = input("Choice: ")
-
-if choice == 's':
-    download_lang()
-elif choice == 'a':
-    download_all_lang()
-'''
+    lang = " ".join(args.language)
+    download_lang(lang.capitalize().encode('utf-8'))
