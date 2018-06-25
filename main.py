@@ -125,10 +125,8 @@ def download_all_lang():
         if link.get('href') is not None and link.get('href').find('list_rsc') == 0:
             lang = link.text
             lang = "".join(lang.split())
-
-            if link.text.startswith("Na-"):
-                site = requests.get("http://lacito.vjf.cnrs.fr/pangloss/corpus/" + link.get('href')).content
-                download_all_rec(lang, site)
+            site = requests.get("http://lacito.vjf.cnrs.fr/pangloss/corpus/" + link.get('href')).content
+            download_all_rec(lang, site)
 
 
 #START OF SCRIPT
