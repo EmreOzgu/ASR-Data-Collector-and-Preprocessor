@@ -50,13 +50,13 @@ def download_rec(url, lang, rec_num):
 
     if xml_url is not None:
         urllib.request.urlretrieve(xml_url, lang + "Recording" + str(rec_num + 1) + ".xml")
+
+    if wav_url is not None:
+        urllib.request.urlretrieve(wav_url, lang + "Recording" + str(rec_num + 1) + ".wav")
     else:
         mp4_url = find_mp4(soup)
         if mp4_url is not None:
             urllib.request.urlretrieve(mp4_url, lang + "Recording" + str(rec_num + 1) + ".mp4")
-
-    if wav_url is not None:
-        urllib.request.urlretrieve(wav_url, lang + "Recording" + str(rec_num + 1) + ".wav")
 
     complete = lang + "Recording" + str(rec_num + 1) + " download complete."
 
