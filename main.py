@@ -1,149 +1,108 @@
-import urllib
 import urllib.request
-import requests
 import sys
 import argparse
-from bs4 import BeautifulSoup
+import pycountry
+from SPARQLWrapper import SPARQLWrapper, JSON
+import os
+import time
 
-#Gets a list of URLs and returns the .wav URL.
-def find_wav(urls):
-    for url in urls:
-        if url.find('.wav') != -1:
-            return url
-    return None
+class Pangloss:
+        def endp(self):
+            return "https://cocoon.huma-num.fr/sparql"
 
-def find_xml(soup):
-    for link in soup.find_all('a'):
-        if link.get('href')[-4:] == ".xml":
-            return link.get('href')
-    return None
+        def query(self):
+            return """
+                PREFIX edm: <http://www.europeana.eu/schemas/edm/>
+                PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+                PREFIX dc: <http://purl.org/dc/elements/1.1/> 
+                PREFIX dcterms: <http://purl.org/dc/terms/> 
+                PREFIX ebucore: <http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#>
 
-def find_mp4(soup):
-    for link in soup.find_all('a'):
-        if link.get('href')[-4:] == ".mp4":
-            return link.get('href')
-    return None
+                SELECT DISTINCT ?audioFile ?textFile ?lg ?cho WHERE {
+                    ?aggr edm:aggregatedCHO  ?cho .
+                    ?cho a edm:ProvidedCHO.
+                    ?cho dc:subject ?lg FILTER regex(str(?lg), "^http://lexvo.org/id/iso639-3/")
+                    ?cho edm:isGatheredInto <http://cocoon.huma-num.fr/pub/COLLECTION_crdo-COLLECTION_LACITO> .
+                    ?cho  dcterms:accessRights "Freely available for non-commercial use" .
+                    
+                    ?aggr edm:hasView ?transcript .
+                    ?transcript  dcterms:conformsTo <http://cocoon.huma-num.fr/pub/CHO_crdo-dtd_archive> .
+                    ?transcript foaf:primaryTopic ?textFile .
 
-#Download the recording files from pangloss, given the url
-def download_rec(url, lang, rec_num):
-    url = "http://lacito.vjf.cnrs.fr/pangloss/corpus/" + url
-    site = requests.get(url).content
-    soup = BeautifulSoup(site, 'html.parser')
+                    ?aggr edm:hasView ?recording .
+                    ?recording ebucore:sampleRate "22050" .
+                    ?recording foaf:primaryTopic ?audioFile .
+                }
+                """
 
-    urls = []
-
-    for link in soup.find_all('source'):
-        urls.append(link.get('src'))
-
-    wav_url = find_wav(urls)
-
-    xml_url = find_xml(soup)
-
-    rec = "Recording" + str(rec_num + 1)
-
-    downloading = "Downloading " + lang + "Recording" + str(rec_num + 1) + "..."
-
-    #Using stdout instead of print, since print has problems printing out diacritics.
-    sys.stdout.buffer.write(downloading.encode('utf-8'))
-    print()
-    sys.stdout.flush()
-
-    if xml_url is not None:
-        urllib.request.urlretrieve(xml_url, lang + "Recording" + str(rec_num + 1) + ".xml")
-
-    if wav_url is not None:
-        urllib.request.urlretrieve(wav_url, lang + "Recording" + str(rec_num + 1) + ".wav")
-    else:
-        mp4_url = find_mp4(soup)
-        if mp4_url is not None:
-            urllib.request.urlretrieve(mp4_url, lang + "Recording" + str(rec_num + 1) + ".mp4")
-
-    complete = lang + "Recording" + str(rec_num + 1) + " download complete."
-
-    sys.stdout.buffer.write(complete.encode('utf-8'))
-    print()
-    sys.stdout.flush()
-
-
-#Download all recording files for a given language's site.
-def download_all_rec(lang, site):
-    soup = BeautifulSoup(site, 'html.parser')
-
-    urls = []
-
-    #Find the URLs of all recordings.
-    for link in soup.find_all('a'):
-        if link.get('href') is not None and link.get('href').find('show_text') == 0:
-            url = link.get('href')
-            urls.append(url)
-
-    for u in urls:
-        download_rec(u, lang, urls.index(u))
-
-#Download the recording for a given language.
-def download_lang(lang):
-
-    find = requests.get("http://lacito.vjf.cnrs.fr/pangloss/corpus/index_en.html").content
-
-    soup_find = BeautifulSoup(find, 'html.parser')
-
-    found = False
-
-    #Finds the given language's website.
-    for name in soup_find.find_all('a'):
-        lang_name = name.text
-
-        #Gets rid of parantheses for language names that include a description.
-        if lang_name.find(" (") != -1:
-            lang_name = lang_name[:lang_name.find(" (")]
-
-        lang_name = "".join(lang_name.split())
-
-        if lang_name == lang:
-            site = requests.get('http://lacito.vjf.cnrs.fr/pangloss/corpus/' + name.get('href')).content
-            found = True
-            break
-
-    if not found:
-        print("Language not found.")
-        sys.exit(1)
-
-    download_all_rec(lang, site)
 
 #Download recordings for all of the languages available.
-def download_all_lang():
+def download_lang(code):
 
-    lang_list = requests.get("http://lacito.vjf.cnrs.fr/pangloss/corpus/index_en.html").content
+    pangloss = Pangloss()
 
-    soup_langs = BeautifulSoup(lang_list, 'html.parser')
+    recs = sparql_setup(pangloss)
 
-    for br in soup_langs.find_all('br'):
-        br.extract()
+    path = "Recordings/"
 
-    #Find all languages and download recordings.
-    for link in soup_langs.find_all('a'):
-        if link.get('href') is not None and link.get('href').find('list_rsc') == 0:
-            lang = link.text
-            lang = "".join(lang.split())
-            site = requests.get("http://lacito.vjf.cnrs.fr/pangloss/corpus/" + link.get('href')).content
-            download_all_rec(lang, site)
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    #Tracking previous download to prevent copies of files.
+    prev = ""
+
+    print("Downloading...")
+    sys.stdout.flush()
+
+    rec_num = 1
+
+    for rec in recs:
+        xml_url = rec['textFile']['value']
+        
+        if code != "all" and code != rec['lg']['value'][-3:]:
+            continue
+        
+        if xml_url != prev:
+            lang = find_lang(rec['lg']['value'])
+
+            #Continue trying to download until download succeeds.
+            while True:
+                try:
+                    urllib.request.urlretrieve(xml_url, path + "Recording" + str(rec_num) + '-' + lang + ".xml")
+                    time.sleep(0.5)
+                except urllib.error.URLError:
+                    print("error")
+                    sys.stdout.flush()
+                    continue
+                break
+
+            prev = xml_url
+            rec_num += 1
+
+#Finds and returns the language name, given the code.            
+def find_lang(link):
+    code = link[-3:]
+    return pycountry.languages.get(alpha_3=code).name
+
+#Setup a sparql query, given a site object.
+def sparql_setup(site):
+    sparql = SPARQLWrapper(site.endp())
+    sparql.setQuery(site.query())
+    sparql.setReturnFormat(JSON)
+
+    results = sparql.query().convert()["results"]["bindings"]
+
+    return results
 
 
 #START OF SCRIPT
 
 parser = argparse.ArgumentParser()
-parser.add_argument("language", type=str, help="language to download (all or specific)", nargs='*')
-args = parser.parse_args()
+parser.add_argument("language", type=str, help="Language to download (all or specific ISO 693-3 code)")
+args = parser.parse_args()                
 
-lang = " ".join(args.language)
+code = args.language.lower()
 
-if lang.lower() == "all":
-    download_all_lang()
-else:
-    lang = " ".join(args.language)
-
-    #Get rid of whitespace to avoid any errors.
-    lang = "".join(lang.split())
-    download_lang(lang)
+download_lang(code)
 
 print("All downloads are complete.")
