@@ -1,6 +1,8 @@
-from xml.etree import ElementTree
+#from xml.etree import ElementTree
+from lxml import etree as ElementTree
 import argparse
 import os
+import sys
 
 ''' Checks if the word is empty, which is the case for some xml files. '''
 def corrected_word_list(word_list):
@@ -25,32 +27,49 @@ def process_words(words):
 
     for word in words:
 
-        if word.find("FORM") is not None:
-            result += " " + word.find("FORM").text
+        forms = word.findall("FORM")
+
+        if forms:
+            for form in forms:
+                if form.text:
+                    result += " " + form.text
+                    break
         else:
             result += " "
 
-            for morph in word:
+            for morph in word.findall("M"):
                 result += morph.find("FORM").text
     return result
 
 
 ''' Processes given sentence and returns the output line '''
-def process_sent(sent):
-    line = sent.attrib['id']
+def process_sent(sent, num=None):
+
+    if 'id' in sent.attrib:
+        line = sent.attrib['id']
+    else:
+        line = "s" + str(num)
 
     line += audio_info(sent)
 
-    #words = corrected_word_list(sent.findall('W'))
-
     words = sent.findall('W')
 
+    phrases = sent.find("FORM")
+
+    if phrases is not None:
+        for phrase in phrases.itertext():
+            line += " " + phrase
+    elif words:
+        line += process_words(words)
+    elif sent.find("TRANSL") is not None:
+        line += " " + sent.find("TRANSL").text
+    '''
     if sent.find("FORM").text != "":
         line += " " + sent.find("FORM").text
-
+    
     else:
         line += process_words(words)
-
+    '''
     '''
     if words:
         line += process_words(words)
@@ -74,16 +93,14 @@ def audio_info(tag):
     return result
 
 def process_file(xml):
-
     path = "Processed/"
 
     if not os.path.exists(path):
         os.makedirs(path)
-    
+        
     tree = ElementTree.parse("Recordings/" + xml)
     root = clean_up(tree.getroot())
-    #root = tree.getroot()
-
+    
     with open("Processed/" + xml[:-4] + "-Processed.txt", 'wb') as outf:
 
         sents = root.findall("S")
@@ -91,63 +108,27 @@ def process_file(xml):
         if sents:
         
             for sent in root.findall("S"):
-                '''
-                line = sent.attrib['id']
-
-                audio = sent.find("AUDIO")
-
-                if audio is not None:
-                    line += " start=" + audio.attrib['start'] + " " + "end=" + audio.attrib['end']
-
-                words = corrected_word_list(sent.findall('W'))
-                
-                if words:
-
-                    for word in words:
-                        
-                        utter = word.find("FORM").text
-
-                        if utter is not None:
-                            line += " " + utter
-
-                        else:
-                            line += " "
-                            
-                            for morph in word:
-                                line += morph.find("FORM").text
-
-                else:
-                    line += " " + sent.find("FORM").text
-
-                line += '\r\n'
-                outf.write(line.encode('utf-8'))
-                '''
-                outf.write(process_sent(sent).encode('utf-8'))
+                num = 1
+                outf.write(process_sent(sent, num).encode('utf-8'))
+                num += 1
 
         elif root.findall("W"):
 
             for word in root.findall("W"):
-
-                line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
-
-                outf.write(line.encode('utf-8'))
-
                 
+                if word.find("FORM") is not None and word.find("FORM").text is not None:
+                    line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
 
-            
-
-
-
+                    outf.write(line.encode('utf-8'))
 
 #START OF SCRIPT
-
 parser = argparse.ArgumentParser()
 parser.add_argument("filename", type=str, help="XML file name in Recordings/ to process (all or specific)")
 args = parser.parse_args()
 
 if args.filename.lower() == "all":
     for file in os.listdir("Recordings/"):
-        print(file)
         process_file(file)
 else:
     process_file(args.filename)
+print("Processing complete.")
