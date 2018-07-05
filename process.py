@@ -45,11 +45,19 @@ def process_sent(sent):
 
     words = sent.findall('W')
 
+    if sent.find("FORM").text != "":
+        line += " " + sent.find("FORM").text
+
+    else:
+        line += process_words(words)
+
+    '''
     if words:
         line += process_words(words)
     else:
         line += " " + sent.find("FORM").text
-
+    '''
+        
     line += '\r\n'
 
     return line
