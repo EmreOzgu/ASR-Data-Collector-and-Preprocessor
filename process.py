@@ -1,4 +1,3 @@
-#from xml.etree import ElementTree
 from lxml import etree as ElementTree
 import argparse
 import os
@@ -63,19 +62,6 @@ def process_sent(sent, num=None):
         line += process_words(words)
     elif sent.find("TRANSL") is not None:
         line += " " + sent.find("TRANSL").text
-    '''
-    if sent.find("FORM").text != "":
-        line += " " + sent.find("FORM").text
-    
-    else:
-        line += process_words(words)
-    '''
-    '''
-    if words:
-        line += process_words(words)
-    else:
-        line += " " + sent.find("FORM").text
-    '''
         
     line += '\r\n'
 
