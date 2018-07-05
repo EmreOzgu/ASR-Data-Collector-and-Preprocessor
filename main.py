@@ -5,6 +5,7 @@ import pycountry
 from SPARQLWrapper import SPARQLWrapper, JSON
 import os
 import time
+import unidecode
 
 class Pangloss:
         def endp(self):
@@ -80,7 +81,7 @@ def download_lang(code):
 #Finds and returns the language name, given the code.            
 def find_lang(link):
     code = link[-3:]
-    return pycountry.languages.get(alpha_3=code).name
+    return unidecode.unidecode(pycountry.languages.get(alpha_3=code).name)
 
 #Setup a sparql query, given a site object.
 def sparql_setup(site):
