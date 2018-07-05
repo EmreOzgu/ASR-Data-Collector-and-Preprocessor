@@ -3,6 +3,19 @@ import argparse
 import os
 import sys
 
+def strip_punc(string):
+    puncs = [',', '!', '?', '"', '...', '--', '<', '>', '»', '«', '\n', '\r']
+
+    for punc in puncs:
+        string = string.replace(punc, '')
+
+    string = string.replace('. ', ' ')
+    
+    ''' Get rid of excess whitespace, while preserving space between tokens '''
+    string = ' '.join(string.split())
+
+    return string
+
 ''' Checks if the word is empty, which is the case for some xml files. '''
 def corrected_word_list(word_list):
     for word in word_list:
@@ -62,11 +75,15 @@ def process_sent(sent, num=None):
         line += process_words(words)
     elif sent.find("TRANSL") is not None:
         line += " " + sent.find("TRANSL").text
-        
+    '''    
     line += '\r\n'
 
-    return line
+    return strip_punc(line)
+    '''
 
+    line = strip_punc(line) + '\r\n'
+
+    return line
 def audio_info(tag):
 
     result = ""
@@ -105,7 +122,11 @@ def process_file(xml):
                 if word.find("FORM") is not None and word.find("FORM").text is not None:
                     line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
 
-                    outf.write(line.encode('utf-8'))
+                    outf.write(strip_punc(line).encode('utf-8'))
+
+        else:
+            line = root.attrib['id'] + " " + root.find("FORM").text
+            outf.write(strip_punc(line).encode('utf-8'))
 
 #START OF SCRIPT
 parser = argparse.ArgumentParser()
@@ -113,6 +134,7 @@ parser.add_argument("filename", type=str, help="XML file name in Recordings/ to 
 args = parser.parse_args()
 
 if args.filename.lower() == "all":
+    print("Processing...")
     for file in os.listdir("Recordings/"):
         process_file(file)
 else:
