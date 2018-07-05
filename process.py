@@ -4,6 +4,8 @@ import os
 import sys
 
 def strip_punc(string):
+    ''' Gets rid of punctuations and unnecessary whitespace '''
+    
     puncs = [',', '!', '?', '"', '...', '--', '<', '>', '»', '«', '\n', '\r']
 
     for punc in puncs:
@@ -11,20 +13,13 @@ def strip_punc(string):
 
     string = string.replace('. ', ' ')
     
-    ''' Get rid of excess whitespace, while preserving space between tokens '''
+    #Get rid of excess whitespace, while preserving space between tokens
     string = ' '.join(string.split())
 
     return string
 
-''' Checks if the word is empty, which is the case for some xml files. '''
-def corrected_word_list(word_list):
-    for word in word_list:
-        if word.find("FORM") is not None:
-            return word_list
-    return None
-
-''' Gets rid of empty tags in the xml file. '''
 def clean_up(root):
+    ''' Gets rid of empty tags in the xml file. '''
     for child in root:
         if len(child) < 1 and len(child.attrib) < 1 and child.text is None:
             root.remove(child)
@@ -34,7 +29,7 @@ def clean_up(root):
     return root
 
 def process_words(words):
-
+    ''' Find and return the text for each word. '''
     result = ""
 
     for word in words:
@@ -53,19 +48,16 @@ def process_words(words):
                 result += morph.find("FORM").text
     return result
 
-
-''' Processes given sentence and returns the output line '''
 def process_sent(sent, num=None):
-
+    ''' Processes given sentence and returns the output line '''
+    #Get the ID.
     if 'id' in sent.attrib:
         line = sent.attrib['id']
     else:
         line = "s" + str(num)
 
     line += audio_info(sent)
-
     words = sent.findall('W')
-
     phrases = sent.find("FORM")
 
     if phrases is not None:
@@ -75,17 +67,13 @@ def process_sent(sent, num=None):
         line += process_words(words)
     elif sent.find("TRANSL") is not None:
         line += " " + sent.find("TRANSL").text
-    '''    
-    line += '\r\n'
-
-    return strip_punc(line)
-    '''
-
+        
     line = strip_punc(line) + '\r\n'
 
     return line
-def audio_info(tag):
 
+def audio_info(tag):
+    ''' Get the audio info for a given tag. '''
     result = ""
 
     audio = tag.find("AUDIO")
@@ -96,6 +84,7 @@ def audio_info(tag):
     return result
 
 def process_file(xml):
+    ''' Process the information of an xml file into a .txt file. '''
     path = "Processed/"
 
     if not os.path.exists(path):
@@ -104,10 +93,11 @@ def process_file(xml):
     tree = ElementTree.parse("Recordings/" + xml)
     root = clean_up(tree.getroot())
     
-    with open("Processed/" + xml[:-4] + "-Processed.txt", 'wb') as outf:
-
+    #with open(path + xml[:-4] + "-Processed.txt", 'wb') as outf:
+    with open(f'{path}{xml[:-4]}-Processed.txt', 'wb') as outf:
         sents = root.findall("S")
 
+        #Three different processes for three different main formats of the xml files.
         if sents:
         
             for sent in root.findall("S"):
@@ -121,22 +111,22 @@ def process_file(xml):
                 
                 if word.find("FORM") is not None and word.find("FORM").text is not None:
                     line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
-
                     outf.write(strip_punc(line).encode('utf-8'))
 
         else:
             line = root.attrib['id'] + " " + root.find("FORM").text
             outf.write(strip_punc(line).encode('utf-8'))
 
-#START OF SCRIPT
-parser = argparse.ArgumentParser()
-parser.add_argument("filename", type=str, help="XML file name in Recordings/ to process (all or specific)")
-args = parser.parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filename", type=str, help="XML file name in Recordings/ to process (all or specific)")
+    args = parser.parse_args()
 
-if args.filename.lower() == "all":
-    print("Processing...")
-    for file in os.listdir("Recordings/"):
-        process_file(file)
-else:
-    process_file(args.filename)
-print("Processing complete.")
+    if args.filename.lower() == "all":
+        print("Processing...")
+        sys.stdout.flush()
+        for file in os.listdir("Recordings/"):
+            process_file(file)
+    else:
+        process_file(args.filename)
+    print("Processing complete.")

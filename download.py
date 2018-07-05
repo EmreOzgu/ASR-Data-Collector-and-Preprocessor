@@ -1,3 +1,5 @@
+''' Script and functions to download xml files of recordings, currently only from Pangloss. '''
+
 import urllib.request
 import sys
 import argparse
@@ -8,6 +10,8 @@ import time
 import unidecode
 
 class Pangloss:
+        ''' Class to keep endpoints and queries from pangloss constant and reachable. '''
+        
         def endp(self):
             return "https://cocoon.huma-num.fr/sparql"
 
@@ -36,9 +40,8 @@ class Pangloss:
                 }
                 """
 
-
-#Download recordings for all of the languages available.
 def download_lang(code):
+    ''' Download xml files of the given language code. '''
 
     pangloss = Pangloss()
 
@@ -59,7 +62,8 @@ def download_lang(code):
 
     for rec in recs:
         xml_url = rec['textFile']['value']
-        
+
+        #Skip recording if not desired language
         if code != "all" and code != rec['lg']['value'][-3:]:
             continue
         
@@ -69,7 +73,7 @@ def download_lang(code):
             #Continue trying to download until download succeeds.
             while True:
                 try:
-                    urllib.request.urlretrieve(xml_url, path + "Recording" + str(rec_num) + '-' + lang + ".xml")
+                    urllib.request.urlretrieve(xml_url, f'{path}Recording{rec_num}-{lang}.xml')
                     time.sleep(0.5)
                 except urllib.error.URLError:
                     continue
@@ -78,13 +82,15 @@ def download_lang(code):
             prev = xml_url
             rec_num += 1
 
-#Finds and returns the language name, given the code.            
+    print("All downloads are complete.")
+          
 def find_lang(link):
+    ''' Finds and returns the language name, given the code. '''
     code = link[-3:]
     return unidecode.unidecode(pycountry.languages.get(alpha_3=code).name)
 
-#Setup a sparql query, given a site object.
 def sparql_setup(site):
+    ''' Setup a sparql query, given a site object. '''
     sparql = SPARQLWrapper(site.endp())
     sparql.setQuery(site.query())
     sparql.setReturnFormat(JSON)
@@ -93,15 +99,11 @@ def sparql_setup(site):
 
     return results
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("language", type=str, help="Language to download (all or specific ISO 693-3 code)")
+    args = parser.parse_args()                
 
-#START OF SCRIPT
+    code = args.language.lower()
 
-parser = argparse.ArgumentParser()
-parser.add_argument("language", type=str, help="Language to download (all or specific ISO 693-3 code)")
-args = parser.parse_args()                
-
-code = args.language.lower()
-
-download_lang(code)
-
-print("All downloads are complete.")
+    download_lang(code)

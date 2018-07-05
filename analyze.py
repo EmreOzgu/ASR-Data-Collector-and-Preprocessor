@@ -2,9 +2,8 @@ from xml.etree import ElementTree
 import os
 import datetime
 
-#Calculate the length of the audio file the xml file is associated with.
 def calc_time(root):
-
+    ''' Calculate the length of the audio file the xml file is associated with. '''
     i = 0
     j = -1
     assess = True
@@ -43,10 +42,8 @@ def calc_time(root):
 
     return 0
 
-
-#Returns true if given xml file has ipa transcriptions, false otherwise.
 def is_phono(root):
-
+    ''' Returns true if given xml file has ipa transcriptions, false otherwise. '''
     for child in root:
         if child.tag == "S" or child.tag == "W":
             forms = child.findall("FORM")
@@ -63,34 +60,34 @@ def is_phono(root):
 
     return False
 
-#START OF SCRIPT
+if __name__ == "__main__":
 
-phono = 0
-ortho = 0
-time = 0
+    phono = 0
+    ortho = 0
+    time = 0
 
-for file in os.listdir("Recordings/"):
+    for file in os.listdir("Recordings/"):
 
 
-    search = []
-    assess = True
-    form = True
-    
-    if file.endswith(".xml"):
-        tree = ElementTree.parse("Recordings/" + file)
-        root = tree.getroot()
+        search = []
+        assess = True
+        form = True
+        
+        if file.endswith(".xml"):
+            tree = ElementTree.parse("Recordings/" + file)
+            root = tree.getroot()
 
-        time += calc_time(root)
+            time += calc_time(root)
 
-        if is_phono(root):
-            phono += 1
-        else:
-            ortho += 1
+            if is_phono(root):
+                phono += 1
+            else:
+                ortho += 1
 
-            
-phono_perc = (phono / (phono + ortho)) * 100
-ortho_perc = (ortho / (phono + ortho)) * 100
+                
+    phono_perc = (phono / (phono + ortho)) * 100
+    ortho_perc = (ortho / (phono + ortho)) * 100
 
-print("Percentage of transcriptions using IPA: " + str(phono_perc) + "%")
-print("Percentage of transcriptions using language-specific orthography: " + str(ortho_perc) + "%")
-print("Total audio in minutes: " + str(time / 60))
+    print(f'Percentage of transcriptions using IPA: {phono_perc}%')
+    print(f'Percentage of transcriptions using language-specific orthography: {ortho_perc}%')
+    print(f'Total audio in minutes: {time/60}')
