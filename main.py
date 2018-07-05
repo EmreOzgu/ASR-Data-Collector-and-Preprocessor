@@ -71,8 +71,6 @@ def download_lang(code):
                     urllib.request.urlretrieve(xml_url, path + "Recording" + str(rec_num) + '-' + lang + ".xml")
                     time.sleep(0.5)
                 except urllib.error.URLError:
-                    print("error")
-                    sys.stdout.flush()
                     continue
                 break
 
