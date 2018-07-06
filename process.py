@@ -2,6 +2,10 @@ from lxml import etree as ElementTree
 import argparse
 import os
 import sys
+import logging
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
 
 def strip_punc(string):
     ''' Gets rid of punctuations and unnecessary whitespace '''
@@ -56,7 +60,7 @@ def process_sent(sent, num=None):
     else:
         line = "s" + str(num)
 
-    line += audio_info(sent)
+    #line += audio_info(sent)
     words = sent.findall('W')
     phrases = sent.find("FORM")
 
@@ -83,6 +87,24 @@ def audio_info(tag):
 
     return result
 
+def check_errors(outf):
+    ids = []
+
+    first = outf.read(1)
+    if first is None:
+        logger.info(f'{outf} is empty')
+        return None
+
+    for line in outf:
+        ids.append(line[:line.find(' ')])
+
+    for id1 in ids:
+        for id2 in ids:
+            if id1 == id2 and ids.index(id1) != ids.index(id2):
+                logger.warning(f'Duplicate ID found in {outf}')
+
+    
+
 def process_file(xml):
     ''' Process the information of an xml file into a .txt file. '''
     path = "Processed/"
@@ -94,7 +116,7 @@ def process_file(xml):
     root = clean_up(tree.getroot())
     
     #with open(path + xml[:-4] + "-Processed.txt", 'wb') as outf:
-    with open(f'{path}{xml[:-4]}-Processed.txt', 'wb') as outf:
+    with open(f'{path}{xml[:-4]}_Processed.txt', 'wb+') as outf:
         sents = root.findall("S")
 
         #Three different processes for three different main formats of the xml files.
@@ -102,7 +124,7 @@ def process_file(xml):
         
             for sent in root.findall("S"):
                 num = 1
-                outf.write(process_sent(sent, num).encode('utf-8'))
+                outf.write((xml[:-4] + '_' + process_sent(sent, num)).encode('utf-8'))
                 num += 1
 
         elif root.findall("W"):
@@ -110,12 +132,15 @@ def process_file(xml):
             for word in root.findall("W"):
                 
                 if word.find("FORM") is not None and word.find("FORM").text is not None:
-                    line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
-                    outf.write(strip_punc(line).encode('utf-8'))
+                    #line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
+                    line = xml[:-4] + "_" + word.attrib['id'] + " " + word.find("FORM").text
+                    outf.write((strip_punc(line) + '\r\n').encode('utf-8'))
 
         else:
-            line = root.attrib['id'] + " " + root.find("FORM").text
+            line = xml[:-4] + "_" + root.attrib['id'] + " " + root.find("FORM").text
             outf.write(strip_punc(line).encode('utf-8'))
+
+        check_errors(outf)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -123,10 +148,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.filename.lower() == "all":
-        print("Processing...")
-        sys.stdout.flush()
+        logger.info("Processing...")
         for file in os.listdir("Recordings/"):
             process_file(file)
     else:
         process_file(args.filename)
-    print("Processing complete.")
+    logger.info("Processing complete.")

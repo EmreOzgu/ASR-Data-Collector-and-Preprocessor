@@ -73,7 +73,7 @@ def download_lang(code):
             #Continue trying to download until download succeeds.
             while True:
                 try:
-                    urllib.request.urlretrieve(xml_url, f'{path}Recording{rec_num}-{lang}.xml')
+                    urllib.request.urlretrieve(xml_url, f'{path}Recording{rec_num}_{lang}.xml')
                     time.sleep(0.5)
                 except urllib.error.URLError:
                     continue
@@ -87,7 +87,7 @@ def download_lang(code):
 def find_lang(link):
     ''' Finds and returns the language name, given the code. '''
     code = link[-3:]
-    return unidecode.unidecode(pycountry.languages.get(alpha_3=code).name)
+    return unidecode.unidecode(pycountry.languages.get(alpha_3=code).name).replace(' ', '_').replace('-', '_')
 
 def sparql_setup(site):
     ''' Setup a sparql query, given a site object. '''
