@@ -10,12 +10,27 @@ logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.I
 def strip_punc(string):
     ''' Gets rid of punctuations and unnecessary whitespace '''
     
-    puncs = [',', '!', '?', '"', '...', '--', '<', '>', '»', '«', '\n', '\r']
+    puncs = ['.', ',', '!', '?', '"', '...', '--', '<', '>', '»', '«', '\n', '\r', '- ', ' -', ' —', ' —', '~', '”', '“', ' /', '*', '(', ')', '[', ']', '…', ': ', ';', '~']
+
+    #Remove things in brackets, parantheses.
+    while True:
+        i = string.find('(')
+        j = string.find(')')
+        if i != -1 and j != -1 and i < j:
+            string = string.replace(string[i:j+1], '')
+        else:
+            break
+
+    while True:
+        i = string.find('[')
+        j = string.find(']')
+        if i != -1 and j != -1 and i < j:
+            string = string.replace(string[i:j+1], '')
+        else:
+            break
 
     for punc in puncs:
         string = string.replace(punc, '')
-
-    string = string.replace('. ', ' ')
     
     #Get rid of excess whitespace, while preserving space between tokens
     string = ' '.join(string.split())
