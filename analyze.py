@@ -1,6 +1,7 @@
 from xml.etree import ElementTree
 import os
 import datetime
+import logging
 
 def calc_time(root):
     ''' Calculate the length of the audio file the xml file is associated with. '''
@@ -42,6 +43,9 @@ def calc_time(root):
 
     return 0
 
+def uses_ipa(form):
+    return form.attrib["kindOf"] == "phono" or form.attrib["kindOf"] == "ipa" or form.attrib["kindOf"] == "phone" or form.attrib["kindOf"] == "phonetic" or form.attrib["kindOf"] == "phonemic"
+
 def is_phono(root):
     ''' Returns true if given xml file has ipa transcriptions, false otherwise. '''
     for child in root:
@@ -49,18 +53,21 @@ def is_phono(root):
             forms = child.findall("FORM")
 
             for form in forms:
-                if "kindOf" in form.attrib and form.attrib["kindOf"] == "phono":
+                if "kindOf" in form.attrib and uses_ipa(form):
                     return True
 
             return False
 
         elif child.tag == "FORM":
-            if "kindOf" in child.attrib and child.attrib["kindOf"] == "phono":
+            if "kindOf" in child.attrib and uses_ipa(child):
                 return True
 
     return False
 
 if __name__ == "__main__":
+
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
 
     phono = 0
     ortho = 0
@@ -88,6 +95,6 @@ if __name__ == "__main__":
     phono_perc = (phono / (phono + ortho)) * 100
     ortho_perc = (ortho / (phono + ortho)) * 100
 
-    print(f'Percentage of transcriptions using IPA: {phono_perc}%')
-    print(f'Percentage of transcriptions using language-specific orthography: {ortho_perc}%')
-    print(f'Total audio in minutes: {time/60}')
+    logger.info(f'Percentage of transcriptions using IPA: {phono_perc}%')
+    logger.info(f'Percentage of transcriptions using language-specific orthography: {ortho_perc}%')
+    logger.info(f'Total audio in minutes: {time/60}')
