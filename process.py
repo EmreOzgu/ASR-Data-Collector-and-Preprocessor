@@ -129,8 +129,7 @@ def process_file(xml):
         ids = []
         #Three different processes for three different main formats of the xml files.
         if sents:
-        
-            for sent in root.findall("S"):
+            for sent in sents:
                 num = 1
                 line = xml[:-4] + '_' + process_sent(sent, num)
                 ids.append(line[:line.find(' ')])
