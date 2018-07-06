@@ -87,23 +87,16 @@ def audio_info(tag):
 
     return result
 
-def check_errors(outf):
-    ids = []
+def check_errors(file, ids):
 
-    first = outf.read(1)
-    if first is None:
-        logger.info(f'{outf} is empty')
+    if not ids:
+        logger.warning(f'{file} is empty')
         return None
-
-    for line in outf:
-        ids.append(line[:line.find(' ')])
 
     for id1 in ids:
         for id2 in ids:
             if id1 == id2 and ids.index(id1) != ids.index(id2):
-                logger.warning(f'Duplicate ID found in {outf}')
-
-    
+                logger.warning(f'Duplicate ID found in {file}')
 
 def process_file(xml):
     ''' Process the information of an xml file into a .txt file. '''
@@ -118,13 +111,15 @@ def process_file(xml):
     #with open(path + xml[:-4] + "-Processed.txt", 'wb') as outf:
     with open(f'{path}{xml[:-4]}_Processed.txt', 'wb+') as outf:
         sents = root.findall("S")
-
+        ids = []
         #Three different processes for three different main formats of the xml files.
         if sents:
         
             for sent in root.findall("S"):
                 num = 1
-                outf.write((xml[:-4] + '_' + process_sent(sent, num)).encode('utf-8'))
+                line = xml[:-4] + '_' + process_sent(sent, num)
+                ids.append(line[:line.find(' ')])
+                outf.write(line.encode('utf-8'))
                 num += 1
 
         elif root.findall("W"):
@@ -133,14 +128,23 @@ def process_file(xml):
                 
                 if word.find("FORM") is not None and word.find("FORM").text is not None:
                     #line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
-                    line = xml[:-4] + "_" + word.attrib['id'] + " " + word.find("FORM").text
-                    outf.write((strip_punc(line) + '\r\n').encode('utf-8'))
+                    line = strip_punc(xml[:-4] + "_" + word.attrib['id'] + " " + word.find("FORM").text) + '\r\n'
+                    ids.append(line[:line.find(' ')])
+                    outf.write(line.encode('utf-8'))
+
+                elif word.find("TRANSL") is not None and word.find("TRANSL").text is not None:
+                    line = strip_punc(xml[:-4] + "_" + word.attrib['id'] + " " + word.find("TRANSL").text) + '\r\n'
+                    ids.append(line[:line.find(' ')])
+                    outf.write(line.encode('utf-8'))
+                    
 
         else:
-            line = xml[:-4] + "_" + root.attrib['id'] + " " + root.find("FORM").text
-            outf.write(strip_punc(line).encode('utf-8'))
+            line = strip_punc(xml[:-4] + "_" + root.attrib['id'] + " " + root.find("FORM").text)
+            ids.append(line[:line.find(' ')])
+            outf.write(line.encode('utf-8'))
 
-        check_errors(outf)
+
+        check_errors(outf, ids)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
