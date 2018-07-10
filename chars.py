@@ -28,25 +28,26 @@ def look_up_lang(root):
 
 def find_lang(root, xml):
     lang = ""
-    if "xml:lang" in root.attrib and len(root.attrib['xml:lang']) >= 3 and not root.attrib['xml:lang'].endswith('und'):
-        lang = root.attrib['xml:lang'][-3:]
-    else:
-        for child in root:
-            if child.tag == "S" or child.tag == "M":
-                forms = child.findall("FORM")
-                for form in forms:
-                    if "kindOf" in form.attrib and form.attrib['kindOf'].find('-txt-') != -1:
-                        i = form.attrib['kindOf'].find('-txt-')
-                        lang = form.attrib['kindOf'][i+5:i+8]
-                        break
+    for key in root.attrib:
+        if key.endswith('lang') and len(root.attrib[key]) >= 3 and not root.attrib[key].endswith('und'):
+            lang = root.attrib[key][-3:]
+            return lang
+
+    for child in root:
+        if child.tag == "S" or child.tag == "M":
+            forms = child.findall("FORM")
+            for form in forms:
+                if "kindOf" in form.attrib and form.attrib['kindOf'].find('-txt-') != -1:
+                    i = form.attrib['kindOf'].find('-txt-')
+                    lang = form.attrib['kindOf'][i+5:i+8]
+                    return lang
     if lang == "":
         lang_name = xml[xml.find('_')+1:-4].replace('_', ' ')
-        try:
-            lang = pycountry.languages.get(name=lang_name).alpha_3
-        except KeyError:
-            #lang = look_up_lang(root)
-            if lang_name == Xaracuu:
-                lang = "ane"
+        
+        if lang_name == "Xaracuu":
+            lang = "ane"
+        else:
+            lang = pycountry.languages.get(name=lang_name).alpha_3.lower()
 
     return lang
 
@@ -90,7 +91,6 @@ def update_written(written, path):
             kind = filename[i+1:i+6]
             for line in file:
                 written[kind].append(line.rstrip('\n'))
-    logger.info(len(written['undet']))
 
 def create_set(xml):
     written = {}
@@ -157,13 +157,10 @@ def create_set(xml):
 
     process.remove_empty_files(path)
 
-    logger.info(len(written['undet']))
-
 logger.info("Creating character sets...")
 
 for file in os.listdir("Recordings/"):
     #logger.info(file)
     create_set(file)
-    sys.exit(1)
-
+    
 logger.info("Character set creation complete.")
