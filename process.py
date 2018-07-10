@@ -169,18 +169,21 @@ def write_files(lines, kinds, phonof, orthof, undetf):
             u_wrote = True
 
 def remove_empty_files(path):
+    num = 0
     for file in os.listdir(path):
         if not os.path.getsize(path + file):
             os.remove(path + file)
-            
-def process_file(xml):
+            num += 1
+        if num == 3:
+            logger.info(f"{file[:file.find('_Processed')]} is empty. Could be because transcription not available.")
+  
+def process_file(xml, src, path):
     ''' Process the information of an xml file into a .txt file. '''
-    path = "Processed/"
 
     if not os.path.exists(path):
         os.makedirs(path)
         
-    tree = ElementTree.parse("Recordings/" + xml)
+    tree = ElementTree.parse(src + xml)
     root = clean_up(tree.getroot())
     
     
@@ -242,11 +245,14 @@ if __name__ == "__main__":
     parser.add_argument("filename", type=str, help="XML file name in Recordings/ to process (all or specific)")
     args = parser.parse_args()
 
+    src = "Recordings/"
+    path = "Processed/"
+
     if args.filename.lower() == "all":
         logger.info("Processing...")
-        for file in os.listdir("Recordings/"):
-            print(file)
-            process_file(file)
+        for file in os.listdir(src):
+            process_file(file, src, path)
+        
     else:
-        process_file(args.filename)
+        process_file(args.filename, src, path)
     logger.info("Processing complete.")

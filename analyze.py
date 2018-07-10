@@ -44,7 +44,7 @@ def calc_time(root):
     return 0
 
 def uses_ipa(form):
-    return form.attrib["kindOf"] == "phono" or form.attrib["kindOf"] == "ipa" or form.attrib["kindOf"] == "phone" or form.attrib["kindOf"] == "phonetic" or form.attrib["kindOf"] == "phonemic"
+    return form.attrib["kindOf"] == "phono" or form.attrib["kindOf"] == "ipa" or form.attrib["kindOf"] == "phone" or form.attrib["kindOf"] == "phonetic" or form.attrib["kindOf"] == "phonemic" or form.attrib["kindOf"].lower().startswith("a_word") or form.attrib["kindOf"].lower().startswith("ut")
 
 def is_phono(root):
     ''' Returns true if given xml file has ipa transcriptions, false otherwise. '''
