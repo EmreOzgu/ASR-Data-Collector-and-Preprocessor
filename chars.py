@@ -3,9 +3,28 @@ import os
 import process
 import pycountry
 import logging
+import requests
+from bs4 import BeautifulSoup
+import time
+import sys
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
+
+def look_up_lang(root):
+    lang = ""
+
+    code = root.attrib['id']
+    site = requests.get(f'https://cocoon.huma-num.fr/exist/crdo/meta/{code}').content
+    time.sleep(1)
+    soup = BeautifulSoup(site, 'html.parser')
+
+    for link in soup.find_all('a'):
+        href = link.get('href')
+        if href[:-3].endswith('code='):
+            lang = href[-3:]
+            break
+    return lang
 
 def find_lang(root, xml):
     lang = ""
@@ -22,11 +41,16 @@ def find_lang(root, xml):
                         break
     if lang == "":
         lang_name = xml[xml.find('_')+1:-4].replace('_', ' ')
-        lang = pycountry.languages.get(name=lang_name).alpha_3
+        try:
+            lang = pycountry.languages.get(name=lang_name).alpha_3
+        except KeyError:
+            #lang = look_up_lang(root)
+            if lang_name == Xaracuu:
+                lang = "ane"
 
     return lang
 
-def update_files(lang, written, lines, kinds, phonof, orthof, undetf):
+def update_files(written, lines, kinds, phonof, orthof, undetf):
     #Get rid of whitespace
     for i, line in enumerate(lines):
         lines[i] = ''.join(lines[i].split())
@@ -40,23 +64,36 @@ def update_files(lang, written, lines, kinds, phonof, orthof, undetf):
     
     for i, line in enumerate(lines):
         if kinds[i] == "phono" and not p_wrote:
-            write_to_file(lang, line, written, phonof)
+            write_to_file("phono", line, written, phonof)
             p_wrote = True
         elif kinds[i] == "ortho" and not o_wrote:
-            write_to_file(lang, line, written, orthof)
+            write_to_file("ortho", line, written, orthof)
             o_wrote = True
         elif kinds[i] == "" and not u_wrote:
-            write_to_file(lang, line, written, undetf)
+            write_to_file("undet", line, written, undetf)
             u_wrote = True
 
-def write_to_file(lang, line, written, file):
+def write_to_file(kind, line, written, file):
     for char in line:
         char = char.lower()
-        if char not in written[lang] and char != '\r' and char != '\n':
+        if char not in written[kind] and char != '\r' and char != '\n':
             file.write((char + '\r\n').encode('utf-8'))
-            written[lang].append(char)
+            written[kind].append(char)
 
-def create_set(xml, written):
+def update_written(written, path):
+    written["phono"] = []
+    written["ortho"] = []
+    written["undet"] = []
+    for filename in os.listdir(path):
+        with open(f'{path}{filename}', 'r', encoding="utf8") as file:
+            i = filename.find('_')
+            kind = filename[i+1:i+6]
+            for line in file:
+                written[kind].append(line.rstrip('\n'))
+    logger.info(len(written['undet']))
+
+def create_set(xml):
+    written = {}
 
     tree = ElementTree.parse("Recordings/" + xml)
     root = process.clean_up(tree.getroot())
@@ -68,8 +105,7 @@ def create_set(xml, written):
     if not os.path.exists(path):
         os.makedirs(path)
 
-    if lang not in written:
-        written[lang] = []
+    update_written(written, path)
 
     '''
     for name in os.listdir(path):
@@ -79,7 +115,7 @@ def create_set(xml, written):
             filename = f"{xml.find('_')+1:-4}_Set"
     '''
     
-    with open(f'{path}{lang}_phono.txt', 'ab') as phonof, open(f'{path}{lang}_ortho.txt', 'ab') as orthof, open(f'{path}{lang}_phono.txt', 'ab') as undetf:
+    with open(f'{path}{lang}_phono.txt', 'ab') as phonof, open(f'{path}{lang}_ortho.txt', 'ab') as orthof, open(f'{path}{lang}_undet.txt', 'ab') as undetf:
         sents = root.findall("S")
         
         #Three different processes for three different main formats of the xml files.
@@ -88,7 +124,7 @@ def create_set(xml, written):
                 lines = []
                 kinds = []
                 process.process_sent(xml, sent, lines, kinds, get_id=False)
-                update_files(lang, written, lines, kinds, phonof, orthof, undetf)
+                update_files(written, lines, kinds, phonof, orthof, undetf)
 
         elif root.findall("W"):
 
@@ -103,7 +139,7 @@ def create_set(xml, written):
                             line = process.strip_punc(form.text)
                             process.add_to_list(lines, line, i)
                             process.update_kinds(form, kinds, i)
-                    update_files(lang, written, lines, kinds, phonof, orthof, undetf)
+                    update_files(written, lines, kinds, phonof, orthof, undetf)
 
                 '''
                 elif word.find("TRANSL") is not None and word.find("TRANSL").text is not None:
@@ -117,15 +153,17 @@ def create_set(xml, written):
             kinds = []
             lines.append(process.strip_punc(root.find("FORM").text))
             process.update_kinds(root.find("FORM"), kinds, 0)
-            update_files(lang, written, lines, kinds, phonof, orthof, undetf)
+            update_files(written, lines, kinds, phonof, orthof, undetf)
 
     process.remove_empty_files(path)
 
-written = {}    
+    logger.info(len(written['undet']))
 
 logger.info("Creating character sets...")
 
 for file in os.listdir("Recordings/"):
-    create_set(file, written)
+    #logger.info(file)
+    create_set(file)
+    sys.exit(1)
 
 logger.info("Character set creation complete.")
