@@ -2,6 +2,7 @@ from xml.etree import ElementTree
 import os
 import datetime
 import logging
+import sys
 
 def calc_time(root):
     ''' Calculate the length of the audio file the xml file is associated with. '''

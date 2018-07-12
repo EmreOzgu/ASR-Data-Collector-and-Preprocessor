@@ -8,30 +8,32 @@ from analyze import uses_ipa
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
 
+def remove_between(string, c1, c2):
+    while True:
+        i = string.find(c1)
+        j = string.find(c2)
+        if i != -1 and j != -1 and i < j:
+            string = string.replace(string[i:j+1], '')
+        else:
+            break
+    return string
+
 def strip_punc(string):
     ''' Gets rid of punctuations and unnecessary whitespace '''
     
-    puncs = ['.', ',', '!', '?', '"', '...', '--', '<', '>', '»', '«', '\n', '\r', '- ', ' -', ' —', ' —', '~', '”', '“', ' /', '*', '(', ')', '[', ']', '…', ': ', ';', '~']
+    puncs = ['.', ',', '! ', ' !', '?', '"', '...', '--', '<', '>', '»', '«', '\n', '\r', '~', '”', '“', ' /', '*', '(', ')', '[', ']', '…', ' :', ': ', ';', '~', '=']
+    dashes = ['-', '—', '–', '–', '-']
 
     #Remove things in brackets, parantheses.
-    while True:
-        i = string.find('(')
-        j = string.find(')')
-        if i != -1 and j != -1 and i < j:
-            string = string.replace(string[i:j+1], '')
-        else:
-            break
-
-    while True:
-        i = string.find('[')
-        j = string.find(']')
-        if i != -1 and j != -1 and i < j:
-            string = string.replace(string[i:j+1], '')
-        else:
-            break
+    string = remove_between(string, '[', ']')
+    string = remove_between(string, '(', ')')
+    string = remove_between(string, '<', '>')
 
     for punc in puncs:
         string = string.replace(punc, '')
+
+    for dash in dashes:
+        string = string.replace(dash, ' ')
     
     #Get rid of excess whitespace, while preserving space between tokens
     string = ' '.join(string.split())
@@ -103,13 +105,15 @@ def process_words(words, start, lines, kinds):
                         add_to_line(lines, start, form.text, i)
                         update_kinds(form, kinds, i)
 
-def process_sent(xml, sent, lines, kinds, num=0):
+def process_sent(xml, sent, lines, kinds, num=0, get_id=True):
     ''' Processes given sentence and returns the output line '''
+    start = ""
     #Get the ID.
-    if 'id' in sent.attrib:
-        start = xml[:-4] + '_' + sent.attrib['id']
-    else:
-        start = xml[:-4] + '_' + "s" + str(num)
+    if get_id:
+        if 'id' in sent.attrib:
+            start = xml[:-4] + '_' + sent.attrib['id']
+        else:
+            start = xml[:-4] + '_' + "s" + str(num)
 
     #line += audio_info(sent)
     words = sent.findall('W')
@@ -168,13 +172,13 @@ def write_files(lines, kinds, phonof, orthof, undetf):
             undetf.write(line.encode('utf-8'))
             u_wrote = True
 
-def remove_empty_files(path):
+def remove_empty_files(path, report=True):
     num = 0
     for file in os.listdir(path):
         if not os.path.getsize(path + file):
             os.remove(path + file)
             num += 1
-        if num == 3:
+        if num == 3 and report:
             logger.info(f"{file[:file.find('_Processed')]} is empty. Could be because transcription not available.")
   
 def process_file(xml, src, path):

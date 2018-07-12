@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import sys
+from analyze import calc_time
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
@@ -81,19 +82,66 @@ def write_to_file(kind, line, written, file):
             file.write((char + '\r\n').encode('utf-8'))
             written[kind].append(char)
 
-def update_written(written, path):
-    written["phono"] = []
-    written["ortho"] = []
-    written["undet"] = []
+def create_written(written, path):
+    kinds = ["phono", "ortho", "undet"]
+
+    for kind in kinds:
+        written[kind] = []
+        
     for filename in os.listdir(path):
-        with open(f'{path}{filename}', 'r', encoding="utf8") as file:
-            i = filename.find('_')
-            kind = filename[i+1:i+6]
-            for line in file:
-                written[kind].append(line.rstrip('\n'))
+        i = filename.find('_')
+        j = filename.find('.')
+        kind = filename[i+1:j]
+
+        if kind in kinds:
+            with open(f'{path}{filename}', 'r', encoding="utf8") as file:
+                for line in file:
+                    written[kind].append(line.rstrip('\n'))
+
+def write_audio_info(speakers, lang, path):
+    filename = f'{path}{lang}_audio.txt'
+
+    with open(filename, 'w', encoding="utf8") as audiof:
+        for key in speakers:
+            audiof.write(f'{key}={speakers[key]/60} mins\n')
+
+def update_audio_info(speakers, tag):
+    audio = tag.find("AUDIO")
+
+    if audio is None:
+        return False
+
+    if 'who' in tag.attrib:
+        key = tag.attrib['who']
+        time = float(audio.attrib["end"]) - float(audio.attrib["start"])
+        if key in speakers:
+            speakers[key] += time
+        else:
+            speakers[key] = time
+
+def create_audio_info(speakers, lang, root, path):
+    filename = f'{path}{lang}_audio.txt'
+
+    try:
+        with open(filename, 'r', encoding="utf8") as audiof:
+            for line in audiof:
+                key = line[:line.find("=")]
+                speakers[key] = float(line[line.find('=')+1:line.find(' mins')]) * 60
+    except FileNotFoundError:
+        pass
+
+    speakers['Total time'] += calc_time(root)
+
+def delete_audio_info(path):
+    if os.path.exists(path):
+        for folder in os.listdir(path):
+            for file in os.listdir(f'{path}{folder}/'):
+                if file.endswith('audio.txt'):
+                    os.remove(f'{path}{folder}/{file}')
 
 def create_set(xml):
     written = {}
+    speakers = {'Total time' : 0}
 
     tree = ElementTree.parse("Recordings/" + xml)
     root = process.clean_up(tree.getroot())
@@ -105,7 +153,8 @@ def create_set(xml):
     if not os.path.exists(path):
         os.makedirs(path)
 
-    update_written(written, path)
+    create_written(written, path)
+    create_audio_info(speakers, lang, root, path)
 
     '''
     for name in os.listdir(path):
@@ -124,6 +173,7 @@ def create_set(xml):
                 lines = []
                 kinds = []
                 process.process_sent(xml, sent, lines, kinds, get_id=False)
+                update_audio_info(speakers, sent)
                 update_files(written, lines, kinds, phonof, orthof, undetf)
 
         elif root.findall("W"):
@@ -139,6 +189,7 @@ def create_set(xml):
                             line = process.strip_punc(form.text)
                             process.add_to_list(lines, line, i)
                             process.update_kinds(form, kinds, i)
+                    update_audio_info(speakers, word)
                     update_files(written, lines, kinds, phonof, orthof, undetf)
 
                 '''
@@ -153,14 +204,18 @@ def create_set(xml):
             kinds = []
             lines.append(process.strip_punc(root.find("FORM").text))
             process.update_kinds(root.find("FORM"), kinds, 0)
+            update_audio_info(speakers, root)
             update_files(written, lines, kinds, phonof, orthof, undetf)
 
-    process.remove_empty_files(path)
+    write_audio_info(speakers, lang, path)
+    process.remove_empty_files(path, report=False)
 
-logger.info("Creating character sets...")
 
-for file in os.listdir("Recordings/"):
-    #logger.info(file)
-    create_set(file)
-    
-logger.info("Character set creation complete.")
+if __name__ == "__main__":
+    logger.info("Creating character sets...")
+    delete_audio_info("Stats/")
+    for file in os.listdir("Recordings/"):
+        #logger.info(file)
+        create_set(file)
+        
+    logger.info("Character set creation complete.")
