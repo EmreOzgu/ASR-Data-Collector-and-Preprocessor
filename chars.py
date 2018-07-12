@@ -31,7 +31,7 @@ def find_lang(root, xml):
     lang = ""
     for key in root.attrib:
         if key.endswith('lang') and len(root.attrib[key]) >= 3 and not root.attrib[key].endswith('und'):
-            lang = root.attrib[key][-3:]
+            lang = root.attrib[key][-3:].lower()
             return lang
 
     for child in root:
