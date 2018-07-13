@@ -40,14 +40,12 @@ class Pangloss:
                 }
                 """
 
-def download_lang(code):
-    ''' Download xml files of the given language code. '''
+def download_lang(path, code):
+    ''' Download xml files of the given language code to the given path. '''
 
     pangloss = Pangloss()
 
     recs = sparql_setup(pangloss)
-
-    path = "Recordings/"
 
     if not os.path.exists(path):
         os.makedirs(path)
@@ -105,5 +103,5 @@ if __name__ == "__main__":
     args = parser.parse_args()                
 
     code = args.language.lower()
-
-    download_lang(code)
+    path = "Recordings/"
+    download_lang(path, code)

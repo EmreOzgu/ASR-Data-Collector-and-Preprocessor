@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
 
 def remove_between(string, c1, c2):
+    ''' Removes all characters in between two given characters in a string. '''
     while True:
         i = string.find(c1)
         j = string.find(c2)
@@ -24,7 +25,7 @@ def strip_punc(string):
     puncs = ['.', ',', '! ', ' !', '?', '"', '...', '--', '<', '>', '»', '«', '\n', '\r', '~', '”', '“', ' /', '*', '(', ')', '[', ']', '…', ' :', ': ', ';', '~', '=']
     dashes = ['-', '—', '–', '–', '-']
 
-    #Remove things in brackets, parantheses.
+    #Remove characters in brackets, parantheses, etc.
     string = remove_between(string, '[', ']')
     string = remove_between(string, '(', ')')
     string = remove_between(string, '<', '>')
@@ -51,24 +52,28 @@ def clean_up(root):
     return root
 
 def process_forms(forms, start, lines, kinds):
+    ''' Processes the text in a given list of forms, adds it to the line in lines along with the starting phrase, and updates kinds. '''
     for i, form in enumerate(forms):
         for phrase in form.itertext():
             add_to_line(lines, start, " " + phrase, i)
         update_kinds(form ,kinds, i)
 
 def add_to_list(result, new, i):
+    ''' Adds an element to a given index if the list is long enough. If not, appends the new element. '''
     if i < len(result):
         result[i] = new
     else:
         result.append(new)
 
 def add_to_line(lines, start, add, i):
+    ''' Adds on the an existing line in lines if there's an element in given index. If not, creates a new line in lines, with the starting phrase and added phrase. '''
     if i < len(lines):
         lines[i] += add
     else:
         lines.append(start + add)
 
 def update_kinds(form, kinds, i):
+    ''' Updates the kind (phono, ortho, undetermined) of the form in kinds at the given index. '''
     if 'kindOf' in form.attrib:
         if uses_ipa(form):
             add_to_list(kinds, "phono", i)
@@ -78,6 +83,7 @@ def update_kinds(form, kinds, i):
         add_to_list(kinds, "", i)
 
 def empty_forms(forms):
+    ''' Returns true if given list of forms does not contain text. False otherwise. '''
     for form in forms:
         if form.text:
             return False
@@ -90,6 +96,7 @@ def process_words(words, start, lines, kinds):
 
         forms = word.findall("FORM")
 
+        #Get text from the forms if it exists. If not, look at morphemes.
         if forms:
             process_forms(forms, start, lines, kinds)
         else:
@@ -144,6 +151,7 @@ def audio_info(tag):
     return result
 
 def check_errors(file, ids):
+    ''' Check and report if there are any duplicate IDs within a file. '''
 
     if not ids:
         return None
@@ -173,6 +181,7 @@ def write_files(lines, kinds, phonof, orthof, undetf):
             u_wrote = True
 
 def remove_empty_files(path, report=True):
+    ''' Removes any empty files that may have been opened but not written into. If report=True, then the logger will report which xml files don't have any processed txt files. '''
     num = 0
     for file in os.listdir(path):
         if not os.path.getsize(path + file):
@@ -191,12 +200,16 @@ def process_file(xml, src, path):
     root = clean_up(tree.getroot())
     
     
-    with open(f'{path}{xml[:-4]}_Processed_phono.txt', 'wb+') as phonof, open(f'{path}{xml[:-4]}_Processed_ortho.txt', 'wb+') as orthof, open(f'{path}{xml[:-4]}_Processed_undet.txt', 'wb+') as undetf:
+    with open(f'{path}{xml[:-4]}_Processed_phono.txt', 'wb+') as phonof, open(f'{path}{xml[:-4]}_Processed_ortho.txt', 'wb+') as orthof, \
+        open(f'{path}{xml[:-4]}_Processed_undet.txt', 'wb+') as undetf:
 
         sents = root.findall("S")
         ids = []
-        
-        #Three different processes for three different main formats of the xml files.
+
+        '''
+        Three different processes for three different main formats of the xml files.
+        Constructs a line in lines, and notes down the relevant kind in kinds, in the same index.
+        '''
         if sents:
             for sent in sents:
                 lines = []
