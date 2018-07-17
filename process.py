@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
 
 def uses_spec_alpha(string, alpha):
+    ''' Returns true if the specified alphabet seems to be occurring more than the Latin alphabet in the given string. False otherwise or if specified alphabet isn't recognized. '''
     if alpha.lower() == "chinese":
         r1 = u'\u4e00'
         r2 = u'\u9fff'

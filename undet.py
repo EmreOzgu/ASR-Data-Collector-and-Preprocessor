@@ -26,6 +26,7 @@ def file_phono(file):
     return False
             
 def add_on(old_file, add_file):
+    ''' Reads the characters in the old_file and adds the characters in the add_file that aren't in the old_file. '''
     written = []
     with open(old_file, 'a+', encoding='utf8') as origf, open(add_file, 'r', encoding=('utf-8')) as addf:
         for line in origf:
