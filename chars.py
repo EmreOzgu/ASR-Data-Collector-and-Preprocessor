@@ -93,7 +93,7 @@ def update_files(written, lines, kinds, phonof, orthof, undetf):
 
 def write_to_file(kind, line, written, file):
     ''' Write each char in line to the given file. Add the written char to written[kind] so that it doesn't get written into another file again. '''
-    line = normalize('NFC', line.lower())
+    line = normalize('NFD', line.lower())
     
     for char in line:
         if char not in written[kind] and char != '\r' and char != '\n':
@@ -211,7 +211,7 @@ def create_set(source, dest, xml):
                     for i, form in enumerate(forms):
                         if form.text is not None:
                             #line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
-                            line = process.strip_punc(form.text)
+                            line = process.strip_punc(form.text, after_id=False)
                             process.add_to_list(lines, line, i)
                             process.update_kinds(form, lines, kinds, i)
                     update_audio_info(speakers, word)
@@ -227,7 +227,7 @@ def create_set(source, dest, xml):
         else:
             lines = []
             kinds = []
-            lines.append(process.strip_punc(root.find("FORM").text))
+            lines.append(process.strip_punc(root.find("FORM").text, after_id=False))
             process.update_kinds(root.find("FORM"), lines, kinds, 0)
             update_audio_info(speakers, root)
             update_files(written, lines, kinds, phonof, orthof, undetf)

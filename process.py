@@ -45,17 +45,18 @@ def remove_between(string, c1, c2):
             break
     return string
 
-def strip_punc(string):
-    ''' Gets rid of punctuations and unnecessary whitespace '''
+def strip_punc(string, after_id=True):
+    ''' Gets rid of punctuations and unnecessary whitespace. Decomposes diacritics. Applies process to text after transcription id, if after_id=True. '''
     
     puncs = ['.', ',', '!', '?', '"', '...', '--', '<', '>', '»', '«', '\n', '\r', '~', '”', '“', '*', '(', ')', '[', ']', '{', '}', '…', ':', ';', '÷', '◊', \
-             '~', '=', '‘', '’', 'ˈ', 'ˌ', '/', "'", 'ˑ', '、', '。', '`', '（', '）', '•', '#', '°', '|', '„', '；', '&', '∙', 'ˈ', '³', '¹', '⁵', '²']
+             '~', '=', '‘', '’', 'ˈ', 'ˌ', '/', "'", 'ˑ', '、', '。', '`', '（', '）', '•', '#', '°', '|', '„', '；', '&', '∙', 'ˈ', '³', '¹', '⁵', '²', '_' \
+             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
-
-    non_id_punc =['_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-
+    #non_id_punc =['_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
     dashes = ['-', '—', '–', '–', '-']
+
+    string = normalize('NFD', string)
 
     #Remove characters in brackets, parantheses, etc.
     #string = remove_between(string, '[', ']')
@@ -63,21 +64,24 @@ def strip_punc(string):
     string = remove_between(string, '<', '>')
     string = remove_between(string, '（', '）')
 
-    for punc in non_id_punc:
-        transcrip = string[string.find(' '):].replace(punc, '')
-        string = string.replace(string[string.find(' '):], transcrip)
-
-    for punc in puncs:
-        string = string.replace(punc, '')
-
-    for dash in dashes:
-        string = string.replace(dash, ' ')
+    if after_id:
+        transcript = string[string.find(' '):]
+        for punc in puncs:
+            transcript = transcript.replace(punc, '')
+        for dash in dashes:
+            transcript = transcript.replace(dash, ' ')
+        transcript = transcript.lower()
+        string = string.replace(string[string.find(' '):], transcript)
+    else:
+        for punc in puncs:
+            string = string.replace(punc, '')
+        for dash in dashes:
+            string = string.replace(dash, ' ')
+        string = string.lower()
     
     #Get rid of excess whitespace, while preserving space between tokens
     string = ' '.join(string.split())
-
-    string = normalize('NFC', string)
-
+        
     return string
 
 def clean_up(root):
@@ -182,7 +186,7 @@ def process_sent(xml, sent, lines, kinds, num=0, get_id=True):
         line += " " + sent.find("TRANSL").text
     '''
     for i, line in enumerate(lines):
-        lines[i] = strip_punc(lines[i]) + '\r\n'
+        lines[i] = strip_punc(lines[i], after_id=get_id) + '\r\n'
 
 def audio_info(tag):
     ''' Get the audio info for a given tag. '''
