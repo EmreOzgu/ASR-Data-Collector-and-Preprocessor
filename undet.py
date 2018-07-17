@@ -51,6 +51,7 @@ def classify_undet(src):
                 
                 if os.path.isfile(f'{src}{new_name}'):
                     add_on(f'{src}{new_name}', f'{src}{file}')
+                    os.remove(f'{src}{file}')
                 else:   
                     os.rename(f"{src}{file}", f"{src}{new_name}")
             else:

@@ -9,6 +9,30 @@ from unicodedata import normalize
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
 
+def uses_spec_alpha(string, alpha):
+    if alpha.lower() == "chinese":
+        r1 = u'\u4e00'
+        r2 = u'\u9fff'
+    elif alpha.lower() == "cyrillic":
+        r1 = u'\u0400'
+        r2 = u'\u0500'
+    else:
+        return False
+    
+    non_lat = 0
+    latin = 0
+
+    for char in string:
+        if char > r1 and char < r2:
+            non_lat += 1
+        else:
+            latin != 1
+
+    if non_lat > latin:
+        return True
+    else:
+        return False
+
 def remove_between(string, c1, c2):
     ''' Removes all characters in between two given characters in a string. '''
     while True:
@@ -70,7 +94,7 @@ def process_forms(forms, start, lines, kinds):
     for i, form in enumerate(forms):
         for phrase in form.itertext():
             add_to_line(lines, start, " " + phrase, i)
-        update_kinds(form ,kinds, i)
+        update_kinds(form, lines, kinds, i)
 
 def add_to_list(result, new, i):
     ''' Adds an element to a given index if the list is long enough. If not, appends the new element. '''
@@ -86,10 +110,16 @@ def add_to_line(lines, start, add, i):
     else:
         lines.append(start + add)
 
-def update_kinds(form, kinds, i):
+def update_kinds(form, lines, kinds, i):
     ''' Updates the kind (phono, ortho, undetermined) of the form in kinds at the given index. '''
+    if i < len(lines):
+        line = lines[i]
+        transcript = line[line.find(' '):]
+    else:
+        transcript = ""
+    
     if 'kindOf' in form.attrib:
-        if uses_ipa(form):
+        if uses_ipa(form) and not uses_spec_alpha(transcript, "chinese") and not uses_spec_alpha(transcript, "cyrillic"):
             add_to_list(kinds, "phono", i)
         else:
             add_to_list(kinds, "ortho", i)
@@ -124,7 +154,7 @@ def process_words(words, start, lines, kinds):
                 for i, form in enumerate(forms):
                     if form.text:
                         add_to_line(lines, start, form.text, i)
-                        update_kinds(form, kinds, i)
+                        update_kinds(form, lines, kinds, i)
 
 def process_sent(xml, sent, lines, kinds, num=0, get_id=True):
     ''' Processes given sentence and returns the output line '''
@@ -247,7 +277,7 @@ def process_file(xml, src, path):
                             #line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
                             line = strip_punc(xml[:-4] + "_" + word.attrib['id'] + " " + form.text) + '\r\n'
                             add_to_list(lines, line, i)
-                            update_kinds(form, kinds, i)
+                            update_kinds(form, lines, kinds, i)
                     if lines:              
                         ids.append(lines[0][:lines[0].find(' ')])
                     write_files(lines, kinds, phonof, orthof, undetf)

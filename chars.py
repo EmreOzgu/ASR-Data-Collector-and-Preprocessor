@@ -213,7 +213,7 @@ def create_set(source, dest, xml):
                             #line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
                             line = process.strip_punc(form.text)
                             process.add_to_list(lines, line, i)
-                            process.update_kinds(form, kinds, i)
+                            process.update_kinds(form, lines, kinds, i)
                     update_audio_info(speakers, word)
                     update_files(written, lines, kinds, phonof, orthof, undetf)
 
@@ -228,7 +228,7 @@ def create_set(source, dest, xml):
             lines = []
             kinds = []
             lines.append(process.strip_punc(root.find("FORM").text))
-            process.update_kinds(root.find("FORM"), kinds, 0)
+            process.update_kinds(root.find("FORM"), lines, kinds, 0)
             update_audio_info(speakers, root)
             update_files(written, lines, kinds, phonof, orthof, undetf)
 
