@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import time
 import sys
 from analyze import calc_time
+from unicodedata import normalize
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
@@ -92,8 +93,9 @@ def update_files(written, lines, kinds, phonof, orthof, undetf):
 
 def write_to_file(kind, line, written, file):
     ''' Write each char in line to the given file. Add the written char to written[kind] so that it doesn't get written into another file again. '''
+    line = normalize('NFC', line.lower())
+    
     for char in line:
-        char = char.lower()
         if char not in written[kind] and char != '\r' and char != '\n':
             file.write((char + '\r\n').encode('utf-8'))
             written[kind].append(char)

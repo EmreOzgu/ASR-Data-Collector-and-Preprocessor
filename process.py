@@ -4,6 +4,7 @@ import os
 import sys
 import logging
 from analyze import uses_ipa
+from unicodedata import normalize
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
@@ -22,13 +23,24 @@ def remove_between(string, c1, c2):
 def strip_punc(string):
     ''' Gets rid of punctuations and unnecessary whitespace '''
     
-    puncs = ['.', ',', '! ', ' !', '?', '"', '...', '--', '<', '>', '»', '«', '\n', '\r', '~', '”', '“', ' /', '*', '(', ')', '[', ']', '…', ' :', ': ', ';', '~', '=']
+    puncs = ['.', ',', '!', '?', '"', '...', '--', '<', '>', '»', '«', '\n', '\r', '~', '”', '“', '*', '(', ')', '[', ']', '{', '}', '…', ':', ';', '÷', '◊', \
+             '~', '=', '‘', '’', 'ˈ', 'ˌ', '/', "'", 'ˑ', '、', '。', '`', '（', '）', '•', '#', '°', '|', '„', '；', '&', '∙', 'ˈ', '³', '¹', '⁵', '²']
+
+
+    non_id_punc =['_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+
     dashes = ['-', '—', '–', '–', '-']
 
     #Remove characters in brackets, parantheses, etc.
-    string = remove_between(string, '[', ']')
+    #string = remove_between(string, '[', ']')
     string = remove_between(string, '(', ')')
     string = remove_between(string, '<', '>')
+    string = remove_between(string, '（', '）')
+
+    for punc in non_id_punc:
+        transcrip = string[string.find(' '):].replace(punc, '')
+        string = string.replace(string[string.find(' '):], transcrip)
 
     for punc in puncs:
         string = string.replace(punc, '')
@@ -38,6 +50,8 @@ def strip_punc(string):
     
     #Get rid of excess whitespace, while preserving space between tokens
     string = ' '.join(string.split())
+
+    string = normalize('NFC', string)
 
     return string
 
