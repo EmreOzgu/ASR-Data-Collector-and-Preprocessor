@@ -152,7 +152,7 @@ def create_audio_info(speakers, lang, root, path):
     except FileNotFoundError:
         pass
 
-    speakers['Total time'] += calc_time(root)
+    speakers[f'{root.tag}: Total time'] += calc_time(root)
 
 def delete_audio_info(path):
     ''' Deletes all of the audio info in the given path consisting of folders with iso 639-3 language codes. '''
@@ -164,12 +164,12 @@ def delete_audio_info(path):
 
 def create_set(source, dest, xml):
     ''' Creates character sets (phono, ortho, undetermined) and audio info for a given xml from the source folder, into the specific language's folder in dest. '''
-    written = {}
-    speakers = {'Total time' : 0}
-
     tree = ElementTree.parse(source + xml)
     root = process.clean_up(tree.getroot())
 
+    speakers = {f'{root.tag}: Total time' : 0}
+    written = {}
+    
     lang = find_lang(source, xml)
 
     path = f"{dest}{lang}/"

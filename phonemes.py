@@ -1,4 +1,7 @@
 import os
+from lxml import etree as ElementTree
+from analyze import calc_time
+from process import clean_up
 
 def divide_phonemes(file, src, dest):
     if not os.path.exists(dest):
@@ -22,6 +25,8 @@ dest = "Phonemes/"
 skip = ["ortho", "west_uvean", "wallisian", "tiri", "bwatoo", "cemuhi", "numee", "laz", "paici", "maore_comorian", "wayana", "ngazidja_comorian", "araki", "wetamut", "yucuna", "ajie", \
         "xaracuu", "xaragure", "dehu", "nelemwa", "nemi"]
 
+time = 0
+
 for file in os.listdir(src):
     create = True
     for name in skip:
@@ -30,3 +35,11 @@ for file in os.listdir(src):
             break
     if create:
         divide_phonemes(file, src, dest)
+
+        idx = file.find('_Processed')
+        tree = ElementTree.parse(f'Recordings/{file[:idx]}.xml')
+        root = clean_up(tree.getroot())
+        time += calc_time(root)
+
+with open(f'{dest}total_audio.txt', 'w') as outf:
+    outf.write(f'Total audio in minutes: {time/60} mins')
