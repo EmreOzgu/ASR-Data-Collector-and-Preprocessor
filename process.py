@@ -45,8 +45,14 @@ def remove_between(string, c1, c2):
             break
     return string
 
-def strip_punc(string, after_id=True):
-    ''' Gets rid of punctuations and unnecessary whitespace. Decomposes diacritics. Applies process to text after transcription id, if after_id=True. '''
+def find_nth_occ(string, substr, n):
+    temp = string
+    for i in range(n):
+        temp = temp[temp.find(substr)+1:]
+    return (string.find(temp) - 1)
+
+def strip_punc(string, after_info=True):
+    ''' Gets rid of punctuations and unnecessary whitespace. Decomposes diacritics. Applies process to text after transcription id and audio info, if after_info=True. '''
     
     puncs = ['.', ',', '!', '?', '"', '...', '--', '<', '>', '»', '«', '\n', '\r', '~', '”', '“', '*', '(', ')', '[', ']', '{', '}', '…', ':', ';', '÷', '◊', \
              '~', '=', '‘', '’', 'ˈ', 'ˌ', '/', "'", 'ˑ', '、', '。', '`', '（', '）', '•', '#', '°', '|', '„', '；', '&', '∙', 'ˈ', '³', '¹', '⁵', '²', '_' \
@@ -64,14 +70,16 @@ def strip_punc(string, after_id=True):
     string = remove_between(string, '<', '>')
     string = remove_between(string, '（', '）')
 
-    if after_id:
-        transcript = string[string.find(' '):]
+    if after_info:
+        #transcript = string[string.find(' '):]
+        i = find_nth_occ(string, ' ', 3)
+        transcript = string[i:]
         for punc in puncs:
             transcript = transcript.replace(punc, '')
         for dash in dashes:
             transcript = transcript.replace(dash, ' ')
         transcript = transcript.lower()
-        string = string.replace(string[string.find(' '):], transcript)
+        string = string.replace(string[i:], transcript)
     else:
         for punc in puncs:
             string = string.replace(punc, '')
@@ -81,7 +89,6 @@ def strip_punc(string, after_id=True):
     
     #Get rid of excess whitespace, while preserving space between tokens
     string = ' '.join(string.split())
-        
     return string
 
 def clean_up(root):
@@ -161,15 +168,18 @@ def process_words(words, start, lines, kinds):
                         add_to_line(lines, start, form.text, i)
                         update_kinds(form, lines, kinds, i)
 
-def process_sent(xml, sent, lines, kinds, num=0, get_id=True):
+def process_sent(xml, sent, lines, kinds, num=0, get_info=True):
     ''' Processes given sentence and returns the output line '''
     start = ""
     #Get the ID.
-    if get_id:
+    if get_info:
+        '''
         if 'id' in sent.attrib:
             start = xml[:-4] + '_' + sent.attrib['id']
         else:
             start = xml[:-4] + '_' + "s" + str(num)
+        '''
+        start = find_id(xml, sent, num) + audio_info(sent)
 
     #line += audio_info(sent)
     words = sent.findall('W')
@@ -186,7 +196,14 @@ def process_sent(xml, sent, lines, kinds, num=0, get_id=True):
         line += " " + sent.find("TRANSL").text
     '''
     for i, line in enumerate(lines):
-        lines[i] = strip_punc(lines[i], after_id=get_id) + '\r\n'
+        lines[i] = strip_punc(lines[i], after_info=get_info) + '\r\n'
+
+def find_id(xml, child, num=0):
+    if 'id' in child.attrib:
+        result = xml[:-4] + '_' + child.attrib['id']
+    else:
+        result = xml[:-4] + '_' + "id" + str(num)
+    return result
 
 def audio_info(tag):
     ''' Get the audio info for a given tag. '''
@@ -196,6 +213,8 @@ def audio_info(tag):
 
     if audio is not None:
         result = " start=" + audio.attrib['start'] + " " + "end=" + audio.attrib['end']
+    else:
+        result = " start=N/A end=N/A"
 
     return result
 
@@ -275,17 +294,20 @@ def process_file(xml, src, path):
             for word in root.findall("W"):
                 lines = []
                 kinds = []
+                num = 1
                 forms = word.findall("FORM")
                 if forms:
                     for i, form in enumerate(forms):
                         if form.text is not None:
                             #line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
-                            line = strip_punc(xml[:-4] + "_" + word.attrib['id'] + " " + form.text) + '\r\n'
+                            #line = strip_punc(xml[:-4] + "_" + word.attrib['id'] + " " + form.text) + '\r\n'
+                            line = strip_punc(find_id(xml, word, num) + audio_info(word) + " " + form.text) + '\r\n'
                             add_to_list(lines, line, i)
                             update_kinds(form, lines, kinds, i)
                     if lines:              
                         ids.append(lines[0][:lines[0].find(' ')])
                     write_files(lines, kinds, phonof, orthof, undetf)
+                num += 1
 
                 '''
                 elif word.find("TRANSL") is not None and word.find("TRANSL").text is not None:
@@ -295,7 +317,8 @@ def process_file(xml, src, path):
                 ''' 
 
         else:
-            line = strip_punc(xml[:-4] + "_" + root.attrib['id'] + " " + root.find("FORM").text)
+            #line = strip_punc(xml[:-4] + "_" + root.attrib['id'] + " " + root.find("FORM").text)
+            line = strip_punc(find_id(xml, root) + audio_info(root) + " " + root.find("FORM").text)
             ids.append(line[:line.find(' ')])
             undetf.write(line.encode('utf-8'))
 
@@ -308,10 +331,10 @@ def process_file(xml, src, path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("filename", type=str, help="XML file name in Recordings/ to process (all or specific)")
+    parser.add_argument("filename", type=str, help="XML file name in Recordings_xml/ to process (all or specific)")
     args = parser.parse_args()
 
-    src = "Recordings/"
+    src = "Recordings_xml/"
     path = "Processed/"
 
     if args.filename.lower() == "all":

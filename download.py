@@ -103,5 +103,5 @@ if __name__ == "__main__":
     args = parser.parse_args()                
 
     code = args.language.lower()
-    path = "Recordings/"
+    path = "Recordings_xml/"
     download_lang(path, code)

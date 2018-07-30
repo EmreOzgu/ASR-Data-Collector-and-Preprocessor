@@ -73,8 +73,9 @@ if __name__ == "__main__":
     phono = 0
     ortho = 0
     time = 0
+    src = "Recordings_xml/"
 
-    for file in os.listdir("Recordings/"):
+    for file in os.listdir(src):
 
 
         search = []
@@ -82,7 +83,7 @@ if __name__ == "__main__":
         form = True
         
         if file.endswith(".xml"):
-            tree = ElementTree.parse("Recordings/" + file)
+            tree = ElementTree.parse(src + file)
             root = tree.getroot()
 
             time += calc_time(root)

@@ -196,7 +196,7 @@ def create_set(source, dest, xml):
             for sent in sents:
                 lines = []
                 kinds = []
-                process.process_sent(xml, sent, lines, kinds, get_id=False)
+                process.process_sent(xml, sent, lines, kinds, get_info=False)
                 update_audio_info(speakers, sent)
                 update_files(written, lines, kinds, phonof, orthof, undetf)
 
@@ -211,7 +211,7 @@ def create_set(source, dest, xml):
                     for i, form in enumerate(forms):
                         if form.text is not None:
                             #line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
-                            line = process.strip_punc(form.text, after_id=False)
+                            line = process.strip_punc(form.text, after_info=False)
                             process.add_to_list(lines, line, i)
                             process.update_kinds(form, lines, kinds, i)
                     update_audio_info(speakers, word)
@@ -227,7 +227,7 @@ def create_set(source, dest, xml):
         else:
             lines = []
             kinds = []
-            lines.append(process.strip_punc(root.find("FORM").text, after_id=False))
+            lines.append(process.strip_punc(root.find("FORM").text, after_info=False))
             process.update_kinds(root.find("FORM"), lines, kinds, 0)
             update_audio_info(speakers, root)
             update_files(written, lines, kinds, phonof, orthof, undetf)
@@ -246,7 +246,7 @@ def create_all_sets(source, dest):
 if __name__ == "__main__":
     logger.info("Creating character sets...")
     dest = "Stats/"
-    source = "Recordings/"
+    source = "Recordings_xml/"
     create_all_sets(source, dest)
     '''
     for file in os.listdir("Recordings/"):
