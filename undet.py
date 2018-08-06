@@ -5,14 +5,14 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
 
-def file_phono(file):
-    ''' Returns true if file seems to contain ipa specific chars. '''
+def transcript_phono(transcript):
+    ''' Returns true if file/string/list of strings seems to contain ipa specific chars. '''
     ipa = ['ɲ', 'ŋ', 'ʰ', 'ʌ', 'æ', 'ᵐ', 'ʃ', 'ʊ', 'ᵑ', 'ː', 'ⁿ', 'ʉ', 'ɟ', 'ɨ', 'ħ', 'ʧ', 'ɹ', 'ɖ', 'ɽ', 'ɱ', 'ʐ', 'ʈ', 'ʔ', 'ɔ', 'ʒ', 'ɛ', 'ˀ', 'ɟ', 'ð', 'ʲ', 'ɣ', \
            'ɑ', '˧', 'ʝ', 'ɕ', 'ʐ', 'ɭ', 'ɬ', 'ɗ', 'ʎ', 'ɕ', 'ɤ']
     total = ""
     found = []
     
-    for line in file:
+    for line in transcript:
         total += "".join(line.split())
 
     num = 0
@@ -45,7 +45,7 @@ def classify_undet(src):
     for file in os.listdir(src):
         if file.endswith('undet.txt'):
             with open(f'{src}{file}', 'r', encoding='utf-8') as undetf:
-                phono = file_phono(undetf)
+                phono = transcript_phono(undetf)
                 
             if phono:
                 new_name = f"{file[:file.find('undet.txt')]}phono.txt"

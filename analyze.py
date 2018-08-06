@@ -10,13 +10,23 @@ def calc_time(root):
     j = -1
     assess = True
     search = []
-
+    time = 0
     
     if root.findall("S"):
         search = root.findall("S")
     elif root.findall("W"):
         search = root.findall("W")
 
+    for child in search:
+        audio = child.find("AUDIO")
+        if audio is not None and "start" in audio.attrib and "end" in audio.attrib:
+            try:
+                time += float(audio.attrib["end"]) - float(audio.attrib["start"])
+            except ValueError:
+                continue
+    return time
+
+    '''
     if search:
         first = search[i]
         last = search[j]
@@ -43,6 +53,7 @@ def calc_time(root):
             return float(last.find("AUDIO").attrib["end"]) - float(first.find("AUDIO").attrib["start"])
 
     return 0
+    '''
 
 def uses_ipa(form):
     return form.attrib["kindOf"] == "phono" or form.attrib["kindOf"] == "ipa" or form.attrib["kindOf"] == "phone" or form.attrib["kindOf"] == "phonetic" or form.attrib["kindOf"] == "phonemic" or form.attrib["kindOf"].lower().startswith("a_word") or form.attrib["kindOf"].lower().startswith("ut")

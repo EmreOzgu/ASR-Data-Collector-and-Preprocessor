@@ -151,8 +151,8 @@ def create_audio_info(speakers, lang, root, path):
                 speakers[key] = float(line[line.find('=')+1:line.find(' mins')]) * 60
     except FileNotFoundError:
         pass
-
-    speakers[f'{root.tag}: Total time'] += calc_time(root)
+    speakers['Total time'] += calc_time(root)
+    speakers[f'{root.tag}'] += calc_time(root)
 
 def delete_audio_info(path):
     ''' Deletes all of the audio info in the given path consisting of folders with iso 639-3 language codes. '''
@@ -167,7 +167,8 @@ def create_set(source, dest, xml):
     tree = ElementTree.parse(source + xml)
     root = process.clean_up(tree.getroot())
 
-    speakers = {f'{root.tag}: Total time' : 0}
+    speakers = {'Total time' : 0,
+                f'{root.tag}': 0}
     written = {}
     
     lang = find_lang(source, xml)
