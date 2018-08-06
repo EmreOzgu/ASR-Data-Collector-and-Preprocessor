@@ -43,6 +43,7 @@ if __name__ == "__main__":
     dest = "Stats/"
     xml_src = "Recordings_xml/"
     audio_info = {}
+    written = []
     for file in os.listdir(src):
         collect_audio_info(src, xml_src, file, audio_info)
     write_audio_info(dest, audio_info)
