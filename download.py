@@ -71,22 +71,22 @@ def download_lang(path_xml, path_wav, code):
             continue
            
         #if xml_url != prev:
-	
-	lang = find_lang(rec['lg']['value'])
+    
+    lang = find_lang(rec['lg']['value'])
 
-	#Continue trying to download until download succeeds.
-	while True:
-	    try:
-		urllib.request.urlretrieve(xml_url, f'{path}Recording{rec_num}_{lang}.xml')
-		time.sleep(0.5)
-		urllib.request.urlretrieve(wav_url, f'{path_wav}Recording{rec_num}_{lang}.wav')
-		time.sleep(0.5)
-	    except urllib.error.URLError:
-		continue
-	    break
-	#prev = xml_url
-	
-	rec_num += 1
+    #Continue trying to download until download succeeds.
+    while True:
+        try:
+            urllib.request.urlretrieve(xml_url, f'{path}Recording{rec_num}_{lang}.xml')
+            time.sleep(0.5)
+            urllib.request.urlretrieve(wav_url, f'{path_wav}Recording{rec_num}_{lang}.wav')
+            time.sleep(0.5)
+        except urllib.error.URLError:
+            continue
+        break
+    #prev = xml_url
+    
+    rec_num += 1
 
     logger.info("All downloads are complete.")
           
