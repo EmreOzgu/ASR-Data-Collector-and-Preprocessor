@@ -15,7 +15,7 @@ logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.I
 
 class Pangloss:
         ''' Class to keep endpoints and queries from pangloss constant and reachable. '''
-        
+
         def endp(self):
             return "https://cocoon.huma-num.fr/sparql"
 
@@ -44,52 +44,57 @@ class Pangloss:
                 }
                 """
 
-def download_lang(path_xml, path_wav, code):
+def download_lang(xml_dir, wav_dir, code):
     ''' Download xml files of the given language code to the given path. '''
 
     pangloss = Pangloss()
 
     recs = sparql_setup(pangloss)
 
-    if not os.path.exists(path_xml):
-        os.makedirs(path_xml)
-    if not os.path.exists(path_wav):
-        os.makedirs(path_wav)
+    if not os.path.exists(xml_dir):
+        os.makedirs(xml_dir)
+    if not os.path.exists(wav_dir):
+        os.makedirs(wav_dir)
 
-    #prev = ""
-    
     logger.info("Downloading...")
 
-    rec_num = 1
-
-    for rec in recs:
+    for i, rec in enumerate(recs):
+        rec_num = i+1
         xml_url = rec['textFile']['value']
         wav_url = rec['audioFile']['value']
 
         #Skip recording if not desired language
         if code != "all" and code != rec['lg']['value'][-3:]:
             continue
-           
-        #if xml_url != prev:
-    
+
         lang = find_lang(rec['lg']['value'])
 
+        xml_path = f'{xml_dir}Recording{rec_num}_{lang}.xml'
+        wav_path = f'{wav_dir}Recording{rec_num}_{lang}.wav'
+        if os.path.exists(xml_path) and os.path.exists(wav_path):
+            logger.info(f"Already found {xml_path} and {wav_path}")
+            continue
+
+        logger.info(f"Downloading {xml_path} and {wav_path}")
+
         #Continue trying to download until download succeeds.
-        while True:
+        tries = 0
+        while tries < 5:
             try:
-                urllib.request.urlretrieve(xml_url, f'{path_xml}Recording{rec_num}_{lang}.xml')
+                urllib.request.urlretrieve(xml_url, xml_path)
                 time.sleep(0.5)
-                urllib.request.urlretrieve(wav_url, f'{path_wav}Recording{rec_num}_{lang}.wav')
+                urllib.request.urlretrieve(wav_url, wav_path)
                 time.sleep(0.5)
             except urllib.error.URLError:
+                logger.warn(f"""Failed to download
+                                {xml_path} or {wav_path}.
+                                Trying again; {tries} attempts.""")
+                tries += 1
                 continue
             break
-        #prev = xml_url
-    
-        rec_num += 1
 
     logger.info("All downloads are complete.")
-          
+
 def find_lang(link):
     ''' Finds and returns the language name, given the code. '''
     code = link[-3:]
@@ -111,6 +116,6 @@ if __name__ == "__main__":
     args = parser.parse_args()                
 
     code = args.language.lower()
-    path_xml = "Recordings_xml/"
-    path_wav = "Recordings_wav/"
-    download_lang(path_xml, path_wav, code)
+    xml_dir = "Recordings_xml/"
+    wav_dir = "Recordings_wav/"
+    download_lang(xml_dir, wav_dir, code)
