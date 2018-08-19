@@ -1,10 +1,10 @@
 from lxml import etree as ElementTree
-import argparse
 import os
 import sys
 import logging
 from analyze import uses_ipa
 from unicodedata import normalize
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
@@ -58,8 +58,6 @@ def strip_punc(string, after_info=True):
              '~', '=', '‘', '’', 'ˈ', 'ˌ', '/', "'", 'ˑ', '、', '。', '`', '（', '）', '•', '#', '°', '|', '„', '；', '&', '∙', 'ˈ', '³', '¹', '⁵', '²', '_' \
              '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
-    #non_id_punc =['_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-
     dashes = ['-', '—', '–', '–', '-']
 
     string = normalize('NFD', string)
@@ -71,7 +69,6 @@ def strip_punc(string, after_info=True):
     string = remove_between(string, '（', '）')
 
     if after_info:
-        #transcript = string[string.find(' '):]
         i = find_nth_occ(string, ' ', 3)
         transcript = string[i:]
         for punc in puncs:
@@ -199,6 +196,7 @@ def process_sent(xml, sent, lines, kinds, num=0, get_info=True):
         lines[i] = strip_punc(lines[i], after_info=get_info) + '\r\n'
 
 def find_id(xml, child, num=0):
+    ''' Find the id of a tag. Create one if it doesn't exist. '''
     if 'id' in child.attrib:
         result = xml[:-4] + '_' + child.attrib['id']
     else:
@@ -252,24 +250,24 @@ def remove_empty_files(path, report=True):
     ''' Removes any empty files that may have been opened but not written into. If report=True, then the logger will report which xml files don't have any processed txt files. '''
     num = 0
     for file in os.listdir(path):
-        if not os.path.getsize(path + file):
-            os.remove(path + file)
+        if not os.path.getsize(f'{path}/{file}'):
+            os.remove(f'{path}/{file}')
             num += 1
         if num == 3 and report:
             logger.info(f"{file[:file.find('_Processed')]} is empty. Could be because transcription not available.")
   
 def process_file(xml, src, path):
     ''' Process the information of an xml file into a .txt file. '''
-
-    if not os.path.exists(path):
-        os.makedirs(path)
+    
+    if not path.exists():
+        path.mkdir()
         
-    tree = ElementTree.parse(src + xml)
+    tree = ElementTree.parse(f'{src}/{xml}')
     root = clean_up(tree.getroot())
     
     
-    with open(f'{path}{xml[:-4]}_Processed_phono.txt', 'wb+') as phonof, open(f'{path}{xml[:-4]}_Processed_ortho.txt', 'wb+') as orthof, \
-        open(f'{path}{xml[:-4]}_Processed_undet.txt', 'wb+') as undetf:
+    with open(f'{path}/{xml[:-4]}_Processed_phono.txt', 'wb+') as phonof, open(f'{path}/{xml[:-4]}_Processed_ortho.txt', 'wb+') as orthof, \
+        open(f'{path}/{xml[:-4]}_Processed_undet.txt', 'wb+') as undetf:
 
         sents = root.findall("S")
         ids = []
@@ -329,19 +327,16 @@ def process_file(xml, src, path):
 
     remove_empty_files(path)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("filename", type=str, help="XML file name in Recordings_xml/ to process (all or specific)")
-    args = parser.parse_args()
-
-    src = "Recordings_xml/"
-    path = "Processed/"
-
-    if args.filename.lower() == "all":
-        logger.info("Processing...")
-        for file in os.listdir(src):
-            process_file(file, src, path)
+def main():
+    src = Path('./Recordings_xml')
+    path = Path('./Processed')
+    
+    logger.info("Processing...")
+    
+    for file in os.listdir(src):
+        process_file(file, src, path)
         
-    else:
-        process_file(args.filename, src, path)
     logger.info("Processing complete.")
+
+if __name__ == "__main__":
+    main()

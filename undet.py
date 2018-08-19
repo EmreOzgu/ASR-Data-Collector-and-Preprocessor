@@ -1,6 +1,7 @@
 import os
 from shutil import copyfile
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
@@ -36,42 +37,40 @@ def add_on(old_file, add_file):
             if char not in written:
                 origf.write(char + '\n')
         
+def edit(src, file, new_name, add):
+    '''After classifying undetermined char files, add on to existing types (phono/ortho) if add=True, or create a new file. '''
+    if os.path.isfile(f'{src}/{new_name}'):
+        if add:
+            add_on(f'{src}/{new_name}', f'{src}/{file}')
+        os.remove(f'{src}/{file}')
+    else:   
+        os.rename(f"{src}/{file}", f"{src}/{new_name}")
 
-def classify_undet(src):
-    ''' Classifies undet preprocessed.txt files in src directory '''
+def classify_undet(src, add=False):
+    ''' Classifies undet preprocessed.txt files in src directory. If is_char=True, then it will also add the char list of undet file to an existing file '''
     phono = False
     new_name = ""
     
     for file in os.listdir(src):
         if file.endswith('undet.txt'):
-            with open(f'{src}{file}', 'r', encoding='utf-8') as undetf:
+            with open(f'{src}/{file}', 'r', encoding='utf-8') as undetf:
                 phono = transcript_phono(undetf)
                 
             if phono:
                 new_name = f"{file[:file.find('undet.txt')]}phono.txt"
-                
-                if os.path.isfile(f'{src}{new_name}'):
-                    add_on(f'{src}{new_name}', f'{src}{file}')
-                    os.remove(f'{src}{file}')
-                else:   
-                    os.rename(f"{src}{file}", f"{src}{new_name}")
+                edit(src, file, new_name, add)
             else:
                 new_name = f"{file[:file.find('undet.txt')]}ortho.txt"
-                
-                if os.path.isfile(f'{src}{new_name}'):
-                    add_on(f'{src}{new_name}', f'{src}{file}')
-                    os.remove(f'{src}{file}')
-                else:
-                    os.rename(f"{src}{file}", f"{src}{new_name}")
+                edit(src, file, new_name, add)
         
-        
-           
-
-if __name__ == "__main__":
-    src = "Processed/"
+def main():        
+    src = Path('./Processed')
     logger.info("Classifying undet.txt files...")
     classify_undet(src)
-    src = "Stats/"
+    src = Path('./Stats')
     for folder in os.listdir(src):
-        classify_undet(f'{src}{folder}/')
+        classify_undet(Path(f'{src}/{folder}/'), add=True)
     logger.info("Done")
+
+if __name__ == "__main__":
+    main()

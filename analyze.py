@@ -3,6 +3,7 @@ import os
 import datetime
 import logging
 import sys
+from pathlib import Path
 
 def calc_time(root):
     ''' Calculate the length of the audio file the xml file is associated with. '''
@@ -84,17 +85,15 @@ if __name__ == "__main__":
     phono = 0
     ortho = 0
     time = 0
-    src = "Recordings_xml/"
+    src = Path('./Recordings_xml')
 
     for file in os.listdir(src):
-
-
         search = []
         assess = True
         form = True
         
         if file.endswith(".xml"):
-            tree = ElementTree.parse(src + file)
+            tree = ElementTree.parse(f'{src}/{file}')
             root = tree.getroot()
 
             time += calc_time(root)

@@ -9,6 +9,7 @@ import time
 import sys
 from analyze import calc_time
 from unicodedata import normalize
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
@@ -34,7 +35,7 @@ def look_up_lang(root):
 def find_lang(source, xml):
     ''' Finds and returns the iso 639-3 code for an xml file in the given source folder. '''
 
-    tree = ElementTree.parse(source + xml)
+    tree = ElementTree.parse(f'{source}/{xml}')
     root = process.clean_up(tree.getroot())
     
     lang = ""
@@ -113,13 +114,13 @@ def create_written(written, path):
         kind = filename[i+1:j]
 
         if kind in kinds:
-            with open(f'{path}{filename}', 'r', encoding="utf8") as file:
+            with open(f'{path}/{filename}', 'r', encoding="utf8") as file:
                 for line in file:
                     written[kind].append(line.rstrip('\n'))
 
 def write_audio_info(speakers, lang, path):
     ''' Writes the audio length in minutes for each speaker, into a txt file in path. '''
-    filename = f'{path}{lang}_audio.txt'
+    filename = f'{path}/{lang}_audio.txt'
 
     with open(filename, 'w', encoding="utf8") as audiof:
         for key in speakers:
@@ -142,7 +143,7 @@ def update_audio_info(speakers, tag):
 
 def create_audio_info(speakers, lang, root, path):
     ''' Reads existing audio info from the path for a given lang code, updates speakers accordingly, and adds the total time of the given root xml file to the dictionary. '''
-    filename = f'{path}{lang}_audio.txt'
+    filename = f'{path}/{lang}_audio.txt'
 
     try:
         with open(filename, 'r', encoding="utf8") as audiof:
@@ -158,13 +159,13 @@ def delete_audio_info(path):
     ''' Deletes all of the audio info in the given path consisting of folders with iso 639-3 language codes. '''
     if os.path.exists(path):
         for folder in os.listdir(path):
-            for file in os.listdir(f'{path}{folder}/'):
+            for file in os.listdir(f'{path}/{folder}/'):
                 if file.endswith('audio.txt'):
-                    os.remove(f'{path}{folder}/{file}')
+                    os.remove(f'{path}/{folder}/{file}')
 
 def create_set(source, dest, xml):
     ''' Creates character sets (phono, ortho, undetermined) and audio info for a given xml from the source folder, into the specific language's folder in dest. '''
-    tree = ElementTree.parse(source + xml)
+    tree = ElementTree.parse(f'{source}/{xml}')
     root = process.clean_up(tree.getroot())
 
     speakers = {'Total time' : 0,
@@ -173,10 +174,12 @@ def create_set(source, dest, xml):
     
     lang = find_lang(source, xml)
 
-    path = f"{dest}{lang}/"
+    path = Path(f'{dest}/{lang}')
 
-    if not os.path.exists(path):
-        os.makedirs(path)
+    if not dest.exists():
+        dest.mkdir()
+    if not path.exists():
+        path.mkdir()
 
     create_written(written, path)
     create_audio_info(speakers, lang, root, path)
@@ -189,7 +192,7 @@ def create_set(source, dest, xml):
             filename = f"{xml.find('_')+1:-4}_Set"
     '''
     
-    with open(f'{path}{lang}_phono.txt', 'ab') as phonof, open(f'{path}{lang}_ortho.txt', 'ab') as orthof, open(f'{path}{lang}_undet.txt', 'ab') as undetf:
+    with open(f'{path}/{lang}_phono.txt', 'ab') as phonof, open(f'{path}/{lang}_ortho.txt', 'ab') as orthof, open(f'{path}/{lang}_undet.txt', 'ab') as undetf:
         sents = root.findall("S")
         
         #Three different processes for three different main formats of the xml files.
@@ -241,18 +244,15 @@ def create_all_sets(source, dest):
     #Delete existing audio info so that previously written time values don't get added up when time is being recalculated.
     delete_audio_info(dest)
     for file in os.listdir(source):
-        #logger.info(file)
         create_set(source, dest, file)
-        
-if __name__ == "__main__":
+
+def main():
     logger.info("Creating character sets...")
-    dest = "Stats/"
-    source = "Recordings_xml/"
+    dest = Path('./Stats')
+    source = Path('./Recordings_xml')
     create_all_sets(source, dest)
-    '''
-    for file in os.listdir("Recordings/"):
-        #logger.info(file)
-        create_set(file)
-    '''
         
     logger.info("Character set creation complete.")
+      
+if __name__ == "__main__":
+    main()

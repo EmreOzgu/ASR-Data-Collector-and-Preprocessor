@@ -5,10 +5,10 @@ import sys
 import argparse
 import pycountry
 from SPARQLWrapper import SPARQLWrapper, JSON
-import os
 import time
 import unidecode
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
@@ -50,11 +50,17 @@ def download_lang(xml_dir, wav_dir, code):
     pangloss = Pangloss()
 
     recs = sparql_setup(pangloss)
-
+    '''
     if not os.path.exists(xml_dir):
         os.makedirs(xml_dir)
     if not os.path.exists(wav_dir):
         os.makedirs(wav_dir)
+    '''
+
+    if not xml_dir.exists():
+        xml_dir.mkdir()
+    if not wav_dir.exists():
+        wav_dir.mkdir()
 
     logger.info("Downloading...")
 
@@ -67,11 +73,12 @@ def download_lang(xml_dir, wav_dir, code):
         if code != "all" and code != rec['lg']['value'][-3:]:
             continue
 
-        lang = find_lang(rec['lg']['value'])
-
-        xml_path = f'{xml_dir}Recording{rec_num}_{lang}.xml'
-        wav_path = f'{wav_dir}Recording{rec_num}_{lang}.wav'
-        if os.path.exists(xml_path) and os.path.exists(wav_path):
+        lang = find_lang(rec['lg']['value'][-3:])
+        
+        xml_path = Path(f'{xml_dir}/Recording{rec_num}_{lang}.xml')
+        wav_path = Path(f'{wav_dir}/Recording{rec_num}_{lang}.wav')
+        #if os.path.exists(xml_path) and os.path.exists(wav_path):
+        if xml_path.exists() and wav_path.exists():
             logger.info(f"Already found {xml_path} and {wav_path}")
             continue
 
@@ -95,9 +102,8 @@ def download_lang(xml_dir, wav_dir, code):
 
     logger.info("All downloads are complete.")
 
-def find_lang(link):
+def find_lang(code):
     ''' Finds and returns the language name, given the code. '''
-    code = link[-3:]
     return unidecode.unidecode(pycountry.languages.get(alpha_3=code).name).replace(' ', '_').replace('-', '_')
 
 def sparql_setup(site):
@@ -116,6 +122,6 @@ if __name__ == "__main__":
     args = parser.parse_args()                
 
     code = args.language.lower()
-    xml_dir = "Recordings_xml/"
-    wav_dir = "Recordings_wav/"
+    xml_dir = Path('./Recordings_xml')
+    wav_dir = Path('./Recordings_wav')
     download_lang(xml_dir, wav_dir, code)
