@@ -5,9 +5,9 @@ from pathlib import Path
 from analyze import calc_time
 from process import clean_up, find_nth_occ
 import logging
-from persephone.persephone.utterance import Utterance
-from persephone.persephone.preprocess.wav import extract_wavs
-#from persephone import Utterance, extract_wavs
+#from persephone.persephone.utterance import Utterance
+#from persephone.persephone.preprocess.wav import extract_wavs
+from persephone import Utterance, extract_wavs
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
