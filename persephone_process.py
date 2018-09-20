@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
 
 def divide_phonemes(file, src, txt_dest, wav_dest):
-    if not txt_dest.exits():
+    if not txt_dest.exists():
         txt_dest.mkdir()
     if not wav_dest.exists():
         wav_dest.mkdir()
