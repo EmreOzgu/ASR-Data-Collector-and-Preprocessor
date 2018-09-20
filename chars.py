@@ -1,10 +1,15 @@
+'''
+From the xml files, creates statistics about the character sets of each language
+and audio info (total time, speakers, ortho/phono data in minutes).
+'''
+
 from lxml import etree as ElementTree
 import os
 import process
 import pycountry
 import logging
-import requests
-from bs4 import BeautifulSoup
+#import requests
+#from bs4 import BeautifulSoup
 import time
 import sys
 from analyze import calc_time
@@ -13,9 +18,12 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
-
+"""
 def look_up_lang(root):
-    ''' Finds the recording ID from root and looks up the iso code for the language. Function isn't used right now to prevent creating unnecessary traffic. '''
+    '''
+    Finds the recording ID from root and looks up the iso code for the language.
+    Function isn't used right now to prevent creating unnecessary traffic.
+    '''
     lang = ""
 
     code = root.attrib['id']
@@ -31,7 +39,7 @@ def look_up_lang(root):
     #Pause for a second to regulate requests to the website.
     time.sleep(1)
     return lang
-
+"""
 def find_lang(source, xml):
     ''' Finds and returns the iso 639-3 code for an xml file in the given source folder. '''
 
@@ -59,8 +67,10 @@ def find_lang(source, xml):
     #If code is still not found, try to find the code from the xml name.
     if lang == "":
         lang_name = xml[xml.find('_')+1:-4].replace('_', ' ')
-
-        #Hard coded one language that was causing trouble. look_up_lang function could be used here also, which is a more general solution, but I didn't want to create unnecessary traffic.
+        '''
+        Hard coded one language that was causing trouble. look_up_lang function could be used here also,
+        which is a more general solution, but I didn't want to create unnecessary traffic.
+        '''
         if lang_name == "Xaracuu":
             lang = "ane"
         else:
@@ -142,7 +152,10 @@ def update_audio_info(speakers, tag):
             speakers[key] = time
 
 def create_audio_info(speakers, lang, root, path):
-    ''' Reads existing audio info from the path for a given lang code, updates speakers accordingly, and adds the total time of the given root xml file to the dictionary. '''
+    '''
+    Reads existing audio info from the path for a given lang code, updates speakers accordingly,
+    and adds the total time of the given root xml file to the dictionary.
+    '''
     filename = f'{path}/{lang}_audio.txt'
 
     try:
@@ -164,7 +177,10 @@ def delete_audio_info(path):
                     os.remove(f'{path}/{folder}/{file}')
 
 def create_set(source, dest, xml):
-    ''' Creates character sets (phono, ortho, undetermined) and audio info for a given xml from the source folder, into the specific language's folder in dest. '''
+    '''
+    Creates character sets (phono, ortho, undetermined) and audio info for a given xml
+    from the source folder, into the specific language's folder in dest.
+    '''
     tree = ElementTree.parse(f'{source}/{xml}')
     root = process.clean_up(tree.getroot())
 
@@ -192,7 +208,8 @@ def create_set(source, dest, xml):
             filename = f"{xml.find('_')+1:-4}_Set"
     '''
     
-    with open(f'{path}/{lang}_phono.txt', 'ab') as phonof, open(f'{path}/{lang}_ortho.txt', 'ab') as orthof, open(f'{path}/{lang}_undet.txt', 'ab') as undetf:
+    with open(f'{path}/{lang}_phono.txt', 'ab') as phonof, open(f'{path}/{lang}_ortho.txt', 'ab') as orthof, \
+         open(f'{path}/{lang}_undet.txt', 'ab') as undetf:
         sents = root.findall("S")
         
         #Three different processes for three different main formats of the xml files.

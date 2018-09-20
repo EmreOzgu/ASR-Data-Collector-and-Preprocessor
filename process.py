@@ -1,3 +1,8 @@
+'''
+Preprocesses transcription xml files into a .txt file that is easier to read
+both for a human and other scripts. Breaks xml files into sentence/word IDs,
+start/end times, and the transcription.
+'''
 from lxml import etree as ElementTree
 import os
 import sys

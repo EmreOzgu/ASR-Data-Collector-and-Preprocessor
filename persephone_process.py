@@ -1,3 +1,4 @@
+''' Divides all xml and wav recordings into small utterances that Persephone can process. '''
 import os
 from lxml import etree as ElementTree
 from pathlib import Path
@@ -52,7 +53,9 @@ if __name__ == "__main__":
     src = Path('./Processed/')
     txt_dest = Path('./label/')
     wav_dest = Path('./wav/')
-    skip = ["ortho", "west_uvean", "wallisian", "tiri", "bwatoo", "cemuhi", "numee", "laz", "paici", "maore_comorian", "wayana", "ngazidja_comorian", "araki", "wetamut", "yucuna", "ajie", \
+    #Languages that we decided to skip testing in Persephone right now. We're starting out with pure ipa languages.
+    skip = ["ortho", "west_uvean", "wallisian", "tiri", "bwatoo", "cemuhi", "numee", "laz", "paici", \
+            "maore_comorian", "wayana", "ngazidja_comorian", "araki", "wetamut", "yucuna", "ajie", \
             "xaracuu", "xaragure", "dehu", "nelemwa", "nemi"]
 
     time = 0
@@ -73,4 +76,4 @@ if __name__ == "__main__":
             root = clean_up(tree.getroot())
             time += calc_time(root)
             
-    logger.info(f'Phoneme files created. Total audio in minutes:{time/60)} mins.')
+    logger.info(f'Phoneme files created. Total audio in minutes:{time/60} mins.')
