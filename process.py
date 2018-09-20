@@ -337,7 +337,7 @@ def process_file(xml, src, path):
 
         else:
             logger.warning(f'Failed to process {xml}.')
-            logger.warning('Functionality for this type of files currently not working")
+            logger.warning('Functionality for this type of files currently not working')
             return False
 
         check_errors(phonof, ids)
