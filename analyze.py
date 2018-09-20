@@ -1,3 +1,5 @@
+''' Analyzes every xml file in terms of what percentage uses ipa, and how much data there is in minutes. '''
+
 from xml.etree import ElementTree
 import os
 import datetime
@@ -27,37 +29,11 @@ def calc_time(root):
                 continue
     return time
 
-    '''
-    if search:
-        first = search[i]
-        last = search[j]
-
-        #Find the start time.
-        while first.find("AUDIO") is None:
-            i += 1
-            try:
-                first = search[i]
-            except IndexError:
-                assess = False
-                break
-        
-        #Find the end time.
-        while assess and last.find("AUDIO") is None:
-            j -= 1
-            try:
-                last = search[j]
-            except IndexError:
-                assess = False
-                break
-            
-        if assess:        
-            return float(last.find("AUDIO").attrib["end"]) - float(first.find("AUDIO").attrib["start"])
-
-    return 0
-    '''
-
 def uses_ipa(form):
-    return form.attrib["kindOf"] == "phono" or form.attrib["kindOf"] == "ipa" or form.attrib["kindOf"] == "phone" or form.attrib["kindOf"] == "phonetic" or form.attrib["kindOf"] == "phonemic" or form.attrib["kindOf"].lower().startswith("a_word") or form.attrib["kindOf"].lower().startswith("ut")
+    ''' Returns true if form of a S or W tag seems to be in ipa. '''
+    return form.attrib["kindOf"] == "phono" or form.attrib["kindOf"] == "ipa" or form.attrib["kindOf"] == "phone" \
+           or form.attrib["kindOf"] == "phonetic" or form.attrib["kindOf"] == "phonemic" or form.attrib["kindOf"].lower().startswith("a_word") \
+           or form.attrib["kindOf"].lower().startswith("ut")
 
 def is_phono(root):
     ''' Returns true if given xml file has ipa transcriptions, false otherwise. '''

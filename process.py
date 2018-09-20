@@ -15,7 +15,10 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(levelname)s %(name)s:%(message)s', level=logging.INFO)
 
 def uses_spec_alpha(string, alpha):
-    ''' Returns true if the specified alphabet seems to be occurring more than the Latin alphabet in the given string. False otherwise or if specified alphabet isn't recognized. '''
+    '''
+    Returns true if the specified alphabet seems to be occurring more than the Latin alphabet in the given string.
+    False otherwise or if specified alphabet isn't recognized.
+    '''
     if alpha.lower() == "chinese":
         r1 = u'\u4e00'
         r2 = u'\u9fff'
@@ -57,11 +60,15 @@ def find_nth_occ(string, substr, n):
     return (string.find(temp) - 1)
 
 def strip_punc(string, after_info=True):
-    ''' Gets rid of punctuations and unnecessary whitespace. Decomposes diacritics. Applies process to text after transcription id and audio info, if after_info=True. '''
+    '''
+    Gets rid of punctuations and unnecessary whitespace. Decomposes diacritics. Applies process to text after
+    transcription id and audio info, if after_info=True.
+    '''
     
-    puncs = ['.', ',', '!', '?', '"', '...', '--', '<', '>', '»', '«', '\n', '\r', '~', '”', '“', '*', '(', ')', '[', ']', '{', '}', '…', ':', ';', '÷', '◊', \
-             '~', '=', '‘', '’', 'ˈ', 'ˌ', '/', "'", 'ˑ', '、', '。', '`', '（', '）', '•', '#', '°', '|', '„', '；', '&', '∙', 'ˈ', '³', '¹', '⁵', '²', '_' \
-             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+    puncs = ['.', ',', '!', '?', '"', '...', '--', '<', '>', '»', '«', '\n', '\r', '~', '”', '“', '*', '(', ')', \
+             '[', ']', '{', '}', '…', ':', ';', '÷', '◊', '~', '=', '‘', '’', 'ˈ', 'ˌ', '/', "'", 'ˑ', '、', '。', \
+             '`', '（', '）', '•', '#', '°', '|', '„', '；', '&', '∙', 'ˈ', '³', '¹', '⁵', '²', '_', '0', '1', '2', \
+             '3', '4', '5', '6', '7', '8', '9']
 
     dashes = ['-', '—', '–', '–', '-']
 
@@ -118,7 +125,10 @@ def add_to_list(result, new, i):
         result.append(new)
 
 def add_to_line(lines, start, add, i):
-    ''' Adds on the an existing line in lines if there's an element in given index. If not, creates a new line in lines, with the starting phrase and added phrase. '''
+    '''
+    Adds on the an existing line in lines if there's an element in given index.
+    If not, creates a new line in lines, with the starting phrase and added phrase.
+    '''
     if i < len(lines):
         lines[i] += add
     else:
@@ -175,15 +185,8 @@ def process_sent(xml, sent, lines, kinds, num=0, get_info=True):
     start = ""
     #Get the ID.
     if get_info:
-        '''
-        if 'id' in sent.attrib:
-            start = xml[:-4] + '_' + sent.attrib['id']
-        else:
-            start = xml[:-4] + '_' + "s" + str(num)
-        '''
         start = find_id(xml, sent, num) + audio_info(sent)
 
-    #line += audio_info(sent)
     words = sent.findall('W')
     forms = sent.findall("FORM")
 
@@ -192,7 +195,7 @@ def process_sent(xml, sent, lines, kinds, num=0, get_info=True):
 
     elif words:
         process_words(words, start, lines, kinds)
-
+    #Code not used right now. Could decide to use it in the future.
     '''
     elif sent.find("TRANSL") is not None:
         line += " " + sent.find("TRANSL").text
@@ -252,7 +255,10 @@ def write_files(lines, kinds, phonof, orthof, undetf):
             u_wrote = True
 
 def remove_empty_files(path, report=True):
-    ''' Removes any empty files that may have been opened but not written into. If report=True, then the logger will report which xml files don't have any processed txt files. '''
+    '''
+    Removes any empty files that may have been opened but not written into.
+    If report=True, then the logger will report which xml files don't have any processed txt files.
+    '''
     num = 0
     for file in os.listdir(path):
         if not os.path.getsize(f'{path}/{file}'):
@@ -309,8 +315,6 @@ def process_file(xml, src, path):
                 if forms:
                     for i, form in enumerate(forms):
                         if form.text is not None:
-                            #line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
-                            #line = strip_punc(xml[:-4] + "_" + word.attrib['id'] + " " + form.text) + '\r\n'
                             line = strip_punc(find_id(xml, word, num) + audio_info(word) + " " + form.text) + '\r\n'
                             add_to_list(lines, line, i)
                             update_kinds(form, lines, kinds, i)
@@ -319,21 +323,22 @@ def process_file(xml, src, path):
                     write_files(lines, kinds, phonof, orthof, undetf)
                 num += 1
 
+                #Code currently not used, but potentially could start using it in the future.
                 '''
                 elif word.find("TRANSL") is not None and word.find("TRANSL").text is not None:
                     line = strip_punc(xml[:-4] + "_" + word.attrib['id'] + " " + word.find("TRANSL").text) + '\r\n'
                     ids.append(line[:line.find(' ')])
                     outf.write(line.encode('utf-8'))
                 ''' 
-        elif root.find("Episode") is not None:
-            logger.warning("Functionality for this type of files currently not working")
-            return False
-        else:
-            #line = strip_punc(xml[:-4] + "_" + root.attrib['id'] + " " + root.find("FORM").text)
+        elif root.find("FORM") is not None:
             line = strip_punc(find_id(xml, root) + audio_info(root) + " " + root.find("FORM").text)
             ids.append(line[:line.find(' ')])
             undetf.write(line.encode('utf-8'))
 
+        else:
+            logger.warning(f'Failed to process {xml}.')
+            logger.warning('Functionality for this type of files currently not working")
+            return False
 
         check_errors(phonof, ids)
         check_errors(orthof, ids)
@@ -348,7 +353,6 @@ def main():
     logger.info("Processing...")
     
     for file in os.listdir(src):
-        logger.info(file)
         process_file(file, src, path)
                 
     logger.info("Processing complete.")

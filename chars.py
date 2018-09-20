@@ -231,7 +231,6 @@ def create_set(source, dest, xml):
                     #For each form, add the line to lines, and find the kind for the same index and add it to kinds.
                     for i, form in enumerate(forms):
                         if form.text is not None:
-                            #line = word.attrib['id'] + audio_info(word) + " " + word.find("FORM").text + "\r\n"
                             line = process.strip_punc(form.text, after_info=False)
                             process.add_to_list(lines, line, i)
                             process.update_kinds(form, lines, kinds, i)
@@ -244,17 +243,17 @@ def create_set(source, dest, xml):
                     ids.append(line[:line.find(' ')])
                     outf.write(line.encode('utf-8'))
                 ''' 
-        elif root.find("Episode") is not None:
-            logger.warning(f'{xml} char set failed.')
-            logger.warning("Functionality for this type of files currently not working")
-            return False
-        else:
+        elif root.find('FORM') is not None:
             lines = []
             kinds = []
             lines.append(process.strip_punc(root.find("FORM").text, after_info=False))
             process.update_kinds(root.find("FORM"), lines, kinds, 0)
             update_audio_info(speakers, root)
             update_files(written, lines, kinds, phonof, orthof, undetf)
+        else:
+            logger.warning(f'{xml} char set failed.')
+            logger.warning("Functionality for this type of files currently not working")
+            return False
 
     write_audio_info(speakers, lang, path)
     process.remove_empty_files(path, report=False)

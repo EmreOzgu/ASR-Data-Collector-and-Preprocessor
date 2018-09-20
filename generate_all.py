@@ -1,3 +1,4 @@
+''' Eecutes process.py, chars.py, undet.py in order. '''
 import process
 import chars
 import undet

@@ -1,4 +1,4 @@
-''' Script and functions to download xml files of recordings, currently only from Pangloss. '''
+''' Script and functions to download xml and wav files of recordings, currently only from Pangloss. '''
 
 import urllib.request
 import sys
