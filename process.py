@@ -266,14 +266,21 @@ def process_file(xml, src, path):
     
     if not path.exists():
         path.mkdir()
-        
+    
+    for file in os.listdir(f'{path}/'):
+        if file.startswith(f'{xml[:-4]}'):    
+            logger.info(f'Processed {xml} already found.')
+            return True
+
+
+
     tree = ElementTree.parse(f'{src}/{xml}')
     root = clean_up(tree.getroot())
     
     
     with open(f'{path}/{xml[:-4]}_Processed_phono.txt', 'wb+') as phonof, open(f'{path}/{xml[:-4]}_Processed_ortho.txt', 'wb+') as orthof, \
         open(f'{path}/{xml[:-4]}_Processed_undet.txt', 'wb+') as undetf:
-
+        
         sents = root.findall("S")
         ids = []
 
@@ -318,7 +325,9 @@ def process_file(xml, src, path):
                     ids.append(line[:line.find(' ')])
                     outf.write(line.encode('utf-8'))
                 ''' 
-
+        elif root.find("Episode") is not None:
+            logger.warning("Functionality for this type of files currently not working")
+            return False
         else:
             #line = strip_punc(xml[:-4] + "_" + root.attrib['id'] + " " + root.find("FORM").text)
             line = strip_punc(find_id(xml, root) + audio_info(root) + " " + root.find("FORM").text)
@@ -339,8 +348,9 @@ def main():
     logger.info("Processing...")
     
     for file in os.listdir(src):
+        logger.info(file)
         process_file(file, src, path)
-        
+                
     logger.info("Processing complete.")
 
 if __name__ == "__main__":

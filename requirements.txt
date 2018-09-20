@@ -1,3 +1,5 @@
 SPARQLWrapper
 pycountry
 unidecode
+lxml
+pydub

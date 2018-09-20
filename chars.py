@@ -244,7 +244,10 @@ def create_set(source, dest, xml):
                     ids.append(line[:line.find(' ')])
                     outf.write(line.encode('utf-8'))
                 ''' 
-
+        elif root.find("Episode") is not None:
+            logger.warning(f'{xml} char set failed.')
+            logger.warning("Functionality for this type of files currently not working")
+            return False
         else:
             lines = []
             kinds = []
